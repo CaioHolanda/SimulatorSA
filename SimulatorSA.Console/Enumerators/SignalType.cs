@@ -4,7 +4,7 @@ using System.Text;
 
 namespace SimulatorSA.Console.Enumerators
 {
-    public enum SinalType
+    public enum SignalType
     {
         Current4to20mA,
         Voltage0to10V
