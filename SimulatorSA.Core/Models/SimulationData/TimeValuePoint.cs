@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace SimulatorSA.Core.Models.SimulationData;
+﻿namespace SimulatorSA.Core.Models.SimulationData;
 
 public class TimeValuePoint
 {

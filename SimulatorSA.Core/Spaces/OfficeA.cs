@@ -1,7 +1,5 @@
 ﻿using SimulatorSA.Core.Enumerators;
 using SimulatorSA.Core.Models;
-using System.Collections.Generic;
-using System.Text;
 
 namespace SimulatorSA.Core.Spaces
 {

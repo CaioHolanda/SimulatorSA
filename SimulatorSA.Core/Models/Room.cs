@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace SimulatorSA.Core.Models
+﻿namespace SimulatorSA.Core.Models
 {
     public class Room
     {
