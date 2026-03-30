@@ -7,7 +7,7 @@ namespace SimulatorSA.Core.Spaces
 {
     public class OfficeA : Room
     {
-        public SpacePerturbation Pertubation { get; set; }
+        public SpacePerturbation Perturbation { get; set; }
 
         private static readonly Dictionary<SpacePerturbation, double> PerturbationEffect =
         new()
@@ -24,23 +24,9 @@ namespace SimulatorSA.Core.Spaces
         public OfficeA(string name, double initialTemperature):base(name, initialTemperature,lossCoefficient:0.005)
         {
         }
-        public void TemperatureEffect(SpacePerturbation pertubation)
+        public void ApplyPerturbation(SpacePerturbation perturbation)
         {
-            ActualTemperature += PerturbationEffect[pertubation];
-        }
-        public void ApplyHeating(double valveOpening)
-        {
-            double maxHeatingPower = 0.4;
-            double heatingEffect = (valveOpening / 100.0) * maxHeatingPower;
-            ActualTemperature += heatingEffect;
-            System.Console.Write($"Heating effect: {heatingEffect:F4} °C --> ");
-        }
-        public void ApplyThermalLoss(double outdoorTemperature)
-        {
-            double lossCoefficient = 0.005;
-            double thermalLoss = (ActualTemperature - outdoorTemperature) * lossCoefficient;
-
-            ActualTemperature -= thermalLoss;
+            ApplyTemperatureDelta(PerturbationEffect[perturbation]);
         }
     }
 }

@@ -1,7 +1,5 @@
-﻿using SimulatorSA.Console.Enumerators;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using SimulatorSA.Core.Enumerators;
+
 
 namespace SimulatorSA.Core.Models
 {

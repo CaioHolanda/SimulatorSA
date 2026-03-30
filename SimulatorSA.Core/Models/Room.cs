@@ -17,14 +17,13 @@ namespace SimulatorSA.Core.Models
             LossCoefficient = lossCoefficient;
         }
 
-        public void ApplyHeating(double heatingEffect)
+        public void ApplyTemperatureDelta(double temperatureDelta)
         {
-            ActualTemperature += heatingEffect;
+            ActualTemperature += temperatureDelta;
         }
-
-        public void ApplyThermalLoss(double outdoorTemperature, double lossCoefficient)
+        public void ApplyThermalLoss(double outdoorTemperature)
         {
-            double thermalLoss = (ActualTemperature - outdoorTemperature) * lossCoefficient;
+            double thermalLoss = (ActualTemperature - outdoorTemperature) * LossCoefficient;
             ActualTemperature -= thermalLoss;
         }
     }
