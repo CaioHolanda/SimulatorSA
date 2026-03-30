@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace SimulatorSA.Console.Enumerators
+namespace SimulatorSA.Core.Enumerators
 {
     public enum SignalType
     {

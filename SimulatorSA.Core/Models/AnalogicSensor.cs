@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace SimulatorSA.Console.Sensors
+namespace SimulatorSA.Core.Models
 {
     public class AnalogicSensor
     {
@@ -43,7 +43,7 @@ namespace SimulatorSA.Console.Sensors
             return SignalType switch
             {
                 SignalType.Current4to20mA => MinValue + ((signal - 4.0) / 16) * (MaxValue - MinValue),
-                SignalType.Voltage0to10V=> MinValue+(signal/10)*(MaxValue - MinValue),
+                SignalType.Voltage0to10V => MinValue + (signal / 10) * (MaxValue - MinValue),
                 _ => throw new InvalidOperationException($"Unsupported signal type: {SignalType}")
             };
         }

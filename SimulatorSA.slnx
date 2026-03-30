@@ -1,3 +1,9 @@
 <Solution>
+  <Folder Name="/SimulatorSa.Core/">
+    <Project Path="SimulatorSa.Core/SimulatorSA.Core.csproj" />
+  </Folder>
+  <Folder Name="/SimulatorSa.WinForms/">
+    <Project Path="SimulatorSa.WinForms/SimulatorSA.WinForms.csproj" />
+  </Folder>
   <Project Path="SimulatorSA.Console/SimulatorSA.Console.csproj" />
 </Solution>

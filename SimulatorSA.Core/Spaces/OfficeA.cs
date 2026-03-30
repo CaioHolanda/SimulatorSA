@@ -1,15 +1,13 @@
-﻿using SimulatorSA.Console.Enumerators;
-
+﻿using SimulatorSA.Core.Enumerators;
+using SimulatorSA.Core.Models;
 using System.Collections.Generic;
 using System.Text;
 
-namespace SimulatorSA.Console.Spaces
+namespace SimulatorSA.Core.Spaces
 {
-    public class RoomA
+    public class OfficeA : Room
     {
-        public string Name { get; set; } = string.Empty;
         public SpacePerturbation Pertubation { get; set; }
-        public double ActualTemperature { get; set; }
 
         private static readonly Dictionary<SpacePerturbation, double> PerturbationEffect =
         new()
@@ -23,10 +21,8 @@ namespace SimulatorSA.Console.Spaces
             { SpacePerturbation.PersonIn,        0.5 },
             { SpacePerturbation.PersonOut,      -0.5 }
         };
-        public RoomA(string name, double actualTemperature)
+        public OfficeA(string name, double initialTemperature):base(name, initialTemperature,lossCoefficient:0.005)
         {
-            Name = name;
-            ActualTemperature = actualTemperature;
         }
         public void TemperatureEffect(SpacePerturbation pertubation)
         {
