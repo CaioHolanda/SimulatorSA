@@ -60,10 +60,10 @@ partial class MainForm
         lblFinalValve = new Label();
         lblSteps = new Label();
         lblFinalTemp = new Label();
-        gridResults = new DataGridView();
-        panelGraph = new Panel();
+        tableLayoutPanel1 = new TableLayoutPanel();
+        formsPlotTemperature = new ScottPlot.WinForms.FormsPlot();
+        formsPlotValve = new ScottPlot.WinForms.FormsPlot();
         saveFileDialog1 = new SaveFileDialog();
-        formsPlot1 = new ScottPlot.WinForms.FormsPlot();
         ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
         splitContainer1.Panel1.SuspendLayout();
         splitContainer1.Panel2.SuspendLayout();
@@ -73,8 +73,7 @@ partial class MainForm
         grpResults.SuspendLayout();
         tblResults.SuspendLayout();
         grpSummary.SuspendLayout();
-        ((System.ComponentModel.ISupportInitialize)gridResults).BeginInit();
-        panelGraph.SuspendLayout();
+        tableLayoutPanel1.SuspendLayout();
         SuspendLayout();
         // 
         // splitContainer1
@@ -361,6 +360,7 @@ partial class MainForm
         btnReset.TabIndex = 21;
         btnReset.Text = "Reset";
         btnReset.UseVisualStyleBackColor = true;
+        btnReset.Click += btnReset_Click_1;
         // 
         // grpResults
         // 
@@ -378,15 +378,13 @@ partial class MainForm
         tblResults.ColumnCount = 1;
         tblResults.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
         tblResults.Controls.Add(grpSummary, 0, 0);
-        tblResults.Controls.Add(gridResults, 0, 1);
-        tblResults.Controls.Add(panelGraph, 0, 2);
+        tblResults.Controls.Add(tableLayoutPanel1, 0, 1);
         tblResults.Dock = DockStyle.Fill;
         tblResults.Location = new Point(3, 19);
         tblResults.Name = "tblResults";
-        tblResults.RowCount = 3;
-        tblResults.RowStyles.Add(new RowStyle(SizeType.Percent, 15F));
-        tblResults.RowStyles.Add(new RowStyle(SizeType.Percent, 70F));
-        tblResults.RowStyles.Add(new RowStyle(SizeType.Percent, 15F));
+        tblResults.RowCount = 2;
+        tblResults.RowStyles.Add(new RowStyle(SizeType.Percent, 13F));
+        tblResults.RowStyles.Add(new RowStyle(SizeType.Percent, 87F));
         tblResults.Size = new Size(524, 428);
         tblResults.TabIndex = 0;
         // 
@@ -399,7 +397,7 @@ partial class MainForm
         grpSummary.Dock = DockStyle.Fill;
         grpSummary.Location = new Point(3, 3);
         grpSummary.Name = "grpSummary";
-        grpSummary.Size = new Size(518, 58);
+        grpSummary.Size = new Size(518, 49);
         grpSummary.TabIndex = 0;
         grpSummary.TabStop = false;
         grpSummary.Text = "Summary";
@@ -407,7 +405,7 @@ partial class MainForm
         // lblFinalError
         // 
         lblFinalError.AutoSize = true;
-        lblFinalError.Location = new Point(120, 26);
+        lblFinalError.Location = new Point(130, 23);
         lblFinalError.Name = "lblFinalError";
         lblFinalError.Size = new Size(43, 15);
         lblFinalError.TabIndex = 3;
@@ -416,7 +414,7 @@ partial class MainForm
         // lblFinalValve
         // 
         lblFinalValve.AutoSize = true;
-        lblFinalValve.Location = new Point(243, 26);
+        lblFinalValve.Location = new Point(246, 23);
         lblFinalValve.Name = "lblFinalValve";
         lblFinalValve.Size = new Size(45, 15);
         lblFinalValve.TabIndex = 2;
@@ -425,7 +423,7 @@ partial class MainForm
         // lblSteps
         // 
         lblSteps.AutoSize = true;
-        lblSteps.Location = new Point(398, 26);
+        lblSteps.Location = new Point(393, 23);
         lblSteps.Name = "lblSteps";
         lblSteps.Size = new Size(46, 15);
         lblSteps.TabIndex = 1;
@@ -434,36 +432,42 @@ partial class MainForm
         // lblFinalTemp
         // 
         lblFinalTemp.AutoSize = true;
-        lblFinalTemp.Location = new Point(6, 26);
+        lblFinalTemp.Location = new Point(6, 23);
         lblFinalTemp.Name = "lblFinalTemp";
         lblFinalTemp.Size = new Size(48, 15);
         lblFinalTemp.TabIndex = 0;
         lblFinalTemp.Text = "Temp: -";
         // 
-        // gridResults
+        // tableLayoutPanel1
         // 
-        gridResults.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-        gridResults.Dock = DockStyle.Fill;
-        gridResults.Location = new Point(3, 67);
-        gridResults.Name = "gridResults";
-        gridResults.Size = new Size(518, 293);
-        gridResults.TabIndex = 1;
+        tableLayoutPanel1.ColumnCount = 1;
+        tableLayoutPanel1.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+        tableLayoutPanel1.Controls.Add(formsPlotTemperature, 0, 0);
+        tableLayoutPanel1.Controls.Add(formsPlotValve, 0, 1);
+        tableLayoutPanel1.Dock = DockStyle.Fill;
+        tableLayoutPanel1.Location = new Point(3, 58);
+        tableLayoutPanel1.Name = "tableLayoutPanel1";
+        tableLayoutPanel1.RowCount = 2;
+        tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Percent, 50F));
+        tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Percent, 50F));
+        tableLayoutPanel1.Size = new Size(518, 367);
+        tableLayoutPanel1.TabIndex = 1;
         // 
-        // panelGraph
+        // formsPlotTemperature
         // 
-        panelGraph.Controls.Add(formsPlot1);
-        panelGraph.Dock = DockStyle.Fill;
-        panelGraph.Location = new Point(3, 366);
-        panelGraph.Name = "panelGraph";
-        panelGraph.Size = new Size(518, 59);
-        panelGraph.TabIndex = 2;
+        formsPlotTemperature.Dock = DockStyle.Fill;
+        formsPlotTemperature.Location = new Point(3, 3);
+        formsPlotTemperature.Name = "formsPlotTemperature";
+        formsPlotTemperature.Size = new Size(512, 177);
+        formsPlotTemperature.TabIndex = 0;
         // 
-        // formsPlot1
+        // formsPlotValve
         // 
-        formsPlot1.Location = new Point(152, 3);
-        formsPlot1.Name = "formsPlot1";
-        formsPlot1.Size = new Size(150, 150);
-        formsPlot1.TabIndex = 0;
+        formsPlotValve.Dock = DockStyle.Fill;
+        formsPlotValve.Location = new Point(3, 186);
+        formsPlotValve.Name = "formsPlotValve";
+        formsPlotValve.Size = new Size(512, 178);
+        formsPlotValve.TabIndex = 1;
         // 
         // MainForm
         // 
@@ -485,8 +489,7 @@ partial class MainForm
         tblResults.ResumeLayout(false);
         grpSummary.ResumeLayout(false);
         grpSummary.PerformLayout();
-        ((System.ComponentModel.ISupportInitialize)gridResults).EndInit();
-        panelGraph.ResumeLayout(false);
+        tableLayoutPanel1.ResumeLayout(false);
         ResumeLayout(false);
     }
 
@@ -521,11 +524,11 @@ partial class MainForm
     private GroupBox grpResults;
     private TableLayoutPanel tblResults;
     private GroupBox grpSummary;
-    private DataGridView gridResults;
-    private Panel panelGraph;
     private Label lblFinalError;
     private Label lblFinalValve;
     private Label lblSteps;
     private Label lblFinalTemp;
-    private ScottPlot.WinForms.FormsPlot formsPlot1;
+    private TableLayoutPanel tableLayoutPanel1;
+    private ScottPlot.WinForms.FormsPlot formsPlotTemperature;
+    private ScottPlot.WinForms.FormsPlot formsPlotValve;
 }

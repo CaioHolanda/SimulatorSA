@@ -14,6 +14,7 @@ public partial class MainForm : Form
     {
         InitializeComponent();
         LoadDefaultValues();
+        ClearResults();
     }
 
     private void MainForm_Load(object sender, EventArgs e)
@@ -55,7 +56,7 @@ public partial class MainForm : Form
 
     private void btnRun_Click(object sender, EventArgs e)
     {
-         try
+        try
         {
             var room = new OfficeA(
                 txtRoomName.Text,
@@ -83,7 +84,7 @@ public partial class MainForm : Form
             if (_lastResult is not null)
             {
                 UpdateSummary(_lastResult);
-                LoadGrid(_lastResult);
+                PlotResult(_lastResult);
             }
         }
         catch (Exception ex)
@@ -94,6 +95,13 @@ public partial class MainForm : Form
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Error);
         }
+    }
+    private void btnReset_Click_1(object sender, EventArgs e)
+    {
+        _lastResult = null;
+
+        SetDefaultValues();
+        ClearResults();
     }
     private void UpdateSummary(SimulationResult result)
     {
@@ -116,15 +124,80 @@ public partial class MainForm : Form
             Setpoint = snapshot.Values[SimulationVariables.Setpoint]
         }).ToList();
 
-        gridResults.DataSource = null;
-        gridResults.DataSource = rows;
+        //gridResults.DataSource = null;
+        //gridResults.DataSource = rows;
 
-        gridResults.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
-        gridResults.ReadOnly = true;
-        gridResults.AllowUserToAddRows = false;
-        gridResults.AllowUserToDeleteRows = false;
-        gridResults.AllowUserToResizeRows = false;
-        gridResults.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-        gridResults.MultiSelect = false;
+        //gridResults.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+        //gridResults.ReadOnly = true;
+        //gridResults.AllowUserToAddRows = false;
+        //gridResults.AllowUserToDeleteRows = false;
+        //gridResults.AllowUserToResizeRows = false;
+        //gridResults.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+        //gridResults.MultiSelect = false;
     }
+    private void PlotResult(SimulationResult result)
+    {
+        var temperatureSeries = result.GetSeries(SimulationVariables.Temperature);
+        var setpointSeries = result.GetSeries(SimulationVariables.Setpoint);
+        var valveSeries = result.GetSeries(SimulationVariables.ValveOpening);
+
+        if (temperatureSeries is null || setpointSeries is null || valveSeries is null)
+            return;
+
+        double[] tempX = temperatureSeries.Points.Select(p => p.Time).ToArray();
+        double[] tempY = temperatureSeries.Points.Select(p => p.Value).ToArray();
+
+        double[] setpointX = setpointSeries.Points.Select(p => p.Time).ToArray();
+        double[] setpointY = setpointSeries.Points.Select(p => p.Value).ToArray();
+
+        double[] valveX = valveSeries.Points.Select(p => p.Time).ToArray();
+        double[] valveY = valveSeries.Points.Select(p => p.Value).ToArray();
+
+        formsPlotTemperature.Plot.Clear();
+        formsPlotValve.Plot.Clear();
+
+        formsPlotTemperature.Plot.Add.Scatter(tempX, tempY);
+        formsPlotTemperature.Plot.Add.Scatter(setpointX, setpointY);
+        formsPlotTemperature.Plot.Title("Temperature");
+        formsPlotTemperature.Plot.XLabel("Time (min)");
+        formsPlotTemperature.Plot.YLabel("Temperature (°C)");
+        formsPlotTemperature.Plot.Axes.AutoScale();
+        formsPlotTemperature.Refresh();
+
+        formsPlotValve.Plot.Add.Scatter(valveX, valveY);
+        formsPlotValve.Plot.Title("Valve Opening");
+        formsPlotValve.Plot.XLabel("Time (min)");
+        formsPlotValve.Plot.YLabel("Valve (%)");
+        formsPlotValve.Plot.Axes.AutoScale();
+        formsPlotValve.Refresh();
+    }
+    private void SetDefaultValues()
+    {
+        txtRoomName.Text = "Office A";
+        txtInitialTemp.Text = "18";
+        txtOutdoorTemp.Text = "12";
+        txtSetpoint.Text = "22";
+
+        txtKp.Text = "8";
+        txtKi.Text = "1";
+        txtKd.Text = "0";
+
+        txtTimeStep.Text = "1";
+        txtSteps.Text = "200";
+        txtHeatingDelta.Text = "0.5";
+    }
+    private void ClearResults()
+    {
+        lblFinalTemp.Text = "Temp: -";
+        lblFinalError.Text = "Error: -";
+        lblFinalValve.Text = "Valve: -";
+        lblSteps.Text = "Steps: -";
+
+        formsPlotTemperature.Plot.Clear();
+        formsPlotTemperature.Refresh();
+
+        formsPlotValve.Plot.Clear();
+        formsPlotValve.Refresh();
+    }
+
 }
