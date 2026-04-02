@@ -29,7 +29,7 @@ namespace SimulatorSA.Core.Services
             Reset();
             
         }
-        public double CalculateOutput(double actualTemperature)
+        public double CalculateOutput(double actualTemperature, double deltaTime=0)
         {
             double error = Setpoint - actualTemperature;
             double outputP = error * Kp;

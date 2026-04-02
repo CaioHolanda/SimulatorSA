@@ -6,4 +6,5 @@
     <Project Path="SimulatorSa.WinForms/SimulatorSA.WinForms.csproj" />
   </Folder>
   <Project Path="SimulatorSA.Console/SimulatorSA.Console.csproj" />
+  <Project Path="SimulatorSA.Tests/SimulatorSA.Tests.csproj" />
 </Solution>
