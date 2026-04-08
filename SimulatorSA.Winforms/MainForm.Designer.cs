@@ -89,7 +89,7 @@ partial class MainForm
         // splitContainer1.Panel2
         // 
         splitContainer1.Panel2.Controls.Add(grpResults);
-        splitContainer1.Size = new Size(800, 450);
+        splitContainer1.Size = new Size(800, 1116);
         splitContainer1.SplitterDistance = 266;
         splitContainer1.TabIndex = 0;
         // 
@@ -99,7 +99,7 @@ partial class MainForm
         grpParameters.Dock = DockStyle.Fill;
         grpParameters.Location = new Point(0, 0);
         grpParameters.Name = "grpParameters";
-        grpParameters.Size = new Size(266, 450);
+        grpParameters.Size = new Size(266, 1116);
         grpParameters.TabIndex = 1;
         grpParameters.TabStop = false;
         grpParameters.Text = "Simulation Parameters";
@@ -147,7 +147,7 @@ partial class MainForm
         tblParameters.RowStyles.Add(new RowStyle());
         tblParameters.RowStyles.Add(new RowStyle(SizeType.Percent, 50F));
         tblParameters.RowStyles.Add(new RowStyle(SizeType.Percent, 50F));
-        tblParameters.Size = new Size(260, 428);
+        tblParameters.Size = new Size(260, 1094);
         tblParameters.TabIndex = 0;
         // 
         // txtHeatingDelta
@@ -368,7 +368,7 @@ partial class MainForm
         grpResults.Dock = DockStyle.Fill;
         grpResults.Location = new Point(0, 0);
         grpResults.Name = "grpResults";
-        grpResults.Size = new Size(530, 450);
+        grpResults.Size = new Size(530, 1116);
         grpResults.TabIndex = 0;
         grpResults.TabStop = false;
         grpResults.Text = "Results";
@@ -385,7 +385,7 @@ partial class MainForm
         tblResults.RowCount = 2;
         tblResults.RowStyles.Add(new RowStyle(SizeType.Percent, 13F));
         tblResults.RowStyles.Add(new RowStyle(SizeType.Percent, 87F));
-        tblResults.Size = new Size(524, 428);
+        tblResults.Size = new Size(524, 1094);
         tblResults.TabIndex = 0;
         // 
         // grpSummary
@@ -397,7 +397,7 @@ partial class MainForm
         grpSummary.Dock = DockStyle.Fill;
         grpSummary.Location = new Point(3, 3);
         grpSummary.Name = "grpSummary";
-        grpSummary.Size = new Size(518, 49);
+        grpSummary.Size = new Size(518, 136);
         grpSummary.TabIndex = 0;
         grpSummary.TabStop = false;
         grpSummary.Text = "Summary";
@@ -445,12 +445,12 @@ partial class MainForm
         tableLayoutPanel1.Controls.Add(formsPlotTemperature, 0, 0);
         tableLayoutPanel1.Controls.Add(formsPlotValve, 0, 1);
         tableLayoutPanel1.Dock = DockStyle.Fill;
-        tableLayoutPanel1.Location = new Point(3, 58);
+        tableLayoutPanel1.Location = new Point(3, 145);
         tableLayoutPanel1.Name = "tableLayoutPanel1";
         tableLayoutPanel1.RowCount = 2;
         tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Percent, 50F));
         tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Percent, 50F));
-        tableLayoutPanel1.Size = new Size(518, 367);
+        tableLayoutPanel1.Size = new Size(518, 946);
         tableLayoutPanel1.TabIndex = 1;
         // 
         // formsPlotTemperature
@@ -458,22 +458,22 @@ partial class MainForm
         formsPlotTemperature.Dock = DockStyle.Fill;
         formsPlotTemperature.Location = new Point(3, 3);
         formsPlotTemperature.Name = "formsPlotTemperature";
-        formsPlotTemperature.Size = new Size(512, 177);
+        formsPlotTemperature.Size = new Size(512, 467);
         formsPlotTemperature.TabIndex = 0;
         // 
         // formsPlotValve
         // 
         formsPlotValve.Dock = DockStyle.Fill;
-        formsPlotValve.Location = new Point(3, 186);
+        formsPlotValve.Location = new Point(3, 476);
         formsPlotValve.Name = "formsPlotValve";
-        formsPlotValve.Size = new Size(512, 178);
+        formsPlotValve.Size = new Size(512, 467);
         formsPlotValve.TabIndex = 1;
         // 
         // MainForm
         // 
         AutoScaleDimensions = new SizeF(7F, 15F);
         AutoScaleMode = AutoScaleMode.Font;
-        ClientSize = new Size(800, 450);
+        ClientSize = new Size(800, 1116);
         Controls.Add(splitContainer1);
         Name = "MainForm";
         Text = "Simulator";
