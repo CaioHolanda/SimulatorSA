@@ -1,4 +1,6 @@
-﻿namespace SimulatorSA.Core.Models
+﻿using System;
+
+namespace SimulatorSA.Core.Models
 {
     public class Room
     {
@@ -13,13 +15,20 @@
             LossCoefficient = lossCoefficient;
         }
 
-        public void ApplyTemperatureDelta(double temperatureDelta)
+        public void ApplyHeatingRate(double temperatureRate, double deltaTime)
         {
-            ActualTemperature += temperatureDelta;
+            if (deltaTime <= 0)
+                throw new ArgumentOutOfRangeException(nameof(deltaTime), "Delta time must be greater than zero.");
+
+            ActualTemperature += temperatureRate * deltaTime;
         }
-        public void ApplyThermalLoss(double outdoorTemperature)
+
+        public void ApplyThermalLoss(double outdoorTemperature, double deltaTime)
         {
-            double thermalLoss = (ActualTemperature - outdoorTemperature) * LossCoefficient;
+            if (deltaTime <= 0)
+                throw new ArgumentOutOfRangeException(nameof(deltaTime), "Delta time must be greater than zero.");
+
+            double thermalLoss = (ActualTemperature - outdoorTemperature) * LossCoefficient * deltaTime;
             ActualTemperature -= thermalLoss;
         }
     }

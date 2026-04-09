@@ -1,7 +1,9 @@
 ﻿using SimulatorSA.Core.Actuators;
 using SimulatorSA.Core.Constants;
+using SimulatorSA.Core.Interfaces;
 using SimulatorSA.Core.Models;
 using SimulatorSA.Core.Models.SimulationData;
+using SimulatorSA.Core.Spaces;
 
 namespace SimulatorSA.Core.Services
 {
@@ -9,11 +11,13 @@ namespace SimulatorSA.Core.Services
     {
         public SimulationResult Run(
             Room room,
-            PidController controller,
+            IController controller,
             ValveActuator valve,
             double outdoorTemperature,
-            double maxHeatingDelta,
-            int totalSteps)
+            double maxHeatingRate,
+            int totalSteps,
+            double deltaTime,
+            Action<Room, int, double>? stepAction = null)
         {
             ArgumentNullException.ThrowIfNull(room);
             ArgumentNullException.ThrowIfNull(controller);
@@ -22,8 +26,11 @@ namespace SimulatorSA.Core.Services
             if (totalSteps <= 0)
                 throw new ArgumentOutOfRangeException(nameof(totalSteps), "Total steps must be greater than zero.");
 
-            if (maxHeatingDelta < 0)
-                throw new ArgumentOutOfRangeException(nameof(maxHeatingDelta), "Max heating delta cannot be negative.");
+            if (maxHeatingRate < 0)
+                throw new ArgumentOutOfRangeException(nameof(maxHeatingRate), "Max heating rate cannot be negative.");
+
+            if (deltaTime <= 0)
+                throw new ArgumentOutOfRangeException(nameof(deltaTime), "Delta time must be greater than zero.");
 
             controller.Reset();
 
@@ -62,16 +69,23 @@ namespace SimulatorSA.Core.Services
 
             for (int step = 0; step < totalSteps; step++)
             {
-                double time = step * controller.TimeStep;
+                double time = step * deltaTime;
 
-                double pidOutput = controller.CalculateOutput(room.ActualTemperature);
+                stepAction?.Invoke(room, step, time);
 
-                valve.SetOpening(pidOutput);
+                if (room is OfficeA office)
+                {
+                    office.ApplyInternalPerturbations(deltaTime);
+                }
 
-                double heatingEffect = (valve.OpeningPercentage / 100.0) * maxHeatingDelta;
+                double controllerOutput = controller.CalculateOutput(room.ActualTemperature, deltaTime);
 
-                room.ApplyTemperatureDelta(heatingEffect);
-                room.ApplyThermalLoss(outdoorTemperature);
+                valve.SetOpening(controllerOutput);
+
+                double heatingEffect = (valve.OpeningPercentage / 100.0) * maxHeatingRate;
+
+                room.ApplyHeatingRate(heatingEffect, deltaTime);
+                room.ApplyThermalLoss(outdoorTemperature, deltaTime);
 
                 double error = controller.Setpoint - room.ActualTemperature;
 

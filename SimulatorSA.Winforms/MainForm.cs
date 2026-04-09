@@ -1,6 +1,7 @@
 using SimulatorSA.Core.Actuators;
 using SimulatorSA.Core.Constants;
 using System.Linq;
+using SimulatorSA.Core.Interfaces;
 using SimulatorSA.Core.Models.SimulationData;
 using SimulatorSA.Core.Services;
 using SimulatorSA.Core.Spaces;
@@ -58,16 +59,17 @@ public partial class MainForm : Form
     {
         try
         {
+            double deltaTime = ReadDouble(txtTimeStep);
+
             var room = new OfficeA(
                 txtRoomName.Text,
                 ReadDouble(txtInitialTemp));
 
-            var controller = new PidController(
+            IController controller = new PidController(
                 setpoint: ReadDouble(txtSetpoint),
                 proportionalGain: ReadDouble(txtKp),
                 integralGain: ReadDouble(txtKi),
-                differentialGain: ReadDouble(txtKd),
-                timeStep: ReadDouble(txtTimeStep));
+                differentialGain: ReadDouble(txtKd));
 
             var valve = new ValveActuator("Heating Valve");
 
@@ -79,7 +81,8 @@ public partial class MainForm : Form
                 valve: valve,
                 outdoorTemperature: ReadDouble(txtOutdoorTemp),
                 maxHeatingDelta: ReadDouble(txtHeatingDelta),
-                totalSteps: ReadInt(txtSteps));
+                totalSteps: ReadInt(txtSteps),
+                deltaTime: deltaTime);
 
             if (_lastResult is not null)
             {
