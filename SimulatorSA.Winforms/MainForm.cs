@@ -203,4 +203,18 @@ public partial class MainForm : Form
         formsPlotValve.Refresh();
     }
 
+    private void tblParameters_Paint(object sender, PaintEventArgs e)
+    {
+
+    }
+
+    private void label2_Click_1(object sender, EventArgs e)
+    {
+
+    }
+
+    private void label4_Click(object sender, EventArgs e)
+    {
+
+    }
 }
