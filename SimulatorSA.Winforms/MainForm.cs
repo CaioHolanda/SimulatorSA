@@ -43,7 +43,7 @@ public partial class MainForm : Form
         txtKd.Text = "0.1";
         txtTimeStep.Text = "1";
         txtSteps.Text = "70";
-        txtHeatingDelta.Text = "0.2";
+        txtHeatRate.Text = "0.2";
     }
     private double ReadDouble(TextBox textBox)
     {
@@ -71,7 +71,7 @@ public partial class MainForm : Form
                 integralGain: ReadDouble(txtKi),
                 differentialGain: ReadDouble(txtKd));
 
-            var valve = new ValveActuator("Heating Valve");
+            var valve = new ThermalActuator("Heating Valve");
 
             var runner = new SimulationRunner();
 
@@ -80,7 +80,7 @@ public partial class MainForm : Form
                 controller: controller,
                 valve: valve,
                 outdoorTemperature: ReadDouble(txtOutdoorTemp),
-                maxHeatingDelta: ReadDouble(txtHeatingDelta),
+                maxHeatingDelta: ReadDouble(txtHeatRate),
                 totalSteps: ReadInt(txtSteps),
                 deltaTime: deltaTime);
 
@@ -156,16 +156,16 @@ public partial class MainForm : Form
         double[] valveX = valveSeries.Points.Select(p => p.Time).ToArray();
         double[] valveY = valveSeries.Points.Select(p => p.Value).ToArray();
 
-        formsPlotTemperature.Plot.Clear();
+        graphPIDTemperature.Plot.Clear();
         formsPlotValve.Plot.Clear();
 
-        formsPlotTemperature.Plot.Add.Scatter(tempX, tempY);
-        formsPlotTemperature.Plot.Add.Scatter(setpointX, setpointY);
-        formsPlotTemperature.Plot.Title("Temperature");
-        formsPlotTemperature.Plot.XLabel("Time (min)");
-        formsPlotTemperature.Plot.YLabel("Temperature (°C)");
-        formsPlotTemperature.Plot.Axes.AutoScale();
-        formsPlotTemperature.Refresh();
+        graphPIDTemperature.Plot.Add.Scatter(tempX, tempY);
+        graphPIDTemperature.Plot.Add.Scatter(setpointX, setpointY);
+        graphPIDTemperature.Plot.Title("Temperature");
+        graphPIDTemperature.Plot.XLabel("Time (min)");
+        graphPIDTemperature.Plot.YLabel("Temperature (°C)");
+        graphPIDTemperature.Plot.Axes.AutoScale();
+        graphPIDTemperature.Refresh();
 
         formsPlotValve.Plot.Add.Scatter(valveX, valveY);
         formsPlotValve.Plot.Title("Valve Opening");
@@ -187,7 +187,7 @@ public partial class MainForm : Form
 
         txtTimeStep.Text = "1";
         txtSteps.Text = "200";
-        txtHeatingDelta.Text = "0.5";
+        txtHeatRate.Text = "0.5";
     }
     private void ClearResults()
     {
@@ -196,8 +196,8 @@ public partial class MainForm : Form
         lblFinalValve.Text = "Valve: -";
         lblSteps.Text = "Steps: -";
 
-        formsPlotTemperature.Plot.Clear();
-        formsPlotTemperature.Refresh();
+        graphPIDTemperature.Plot.Clear();
+        graphPIDTemperature.Refresh();
 
         formsPlotValve.Plot.Clear();
         formsPlotValve.Refresh();
@@ -214,6 +214,11 @@ public partial class MainForm : Form
     }
 
     private void label4_Click(object sender, EventArgs e)
+    {
+
+    }
+
+    private void label22_Click(object sender, EventArgs e)
     {
 
     }

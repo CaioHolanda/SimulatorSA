@@ -12,25 +12,25 @@ namespace SimulatorSA.Core.Services
         public SimulationResult Run(
             Room room,
             IController controller,
-            ValveActuator valve,
+            ThermalActuator actuator,
             double outdoorTemperature,
-            double maxHeatingRate,
+            double maxHeatingPowerKW,
             int totalSteps,
-            double deltaTime,
+            double deltaTimeMinutes,
             Action<Room, int, double>? stepAction = null)
         {
             ArgumentNullException.ThrowIfNull(room);
             ArgumentNullException.ThrowIfNull(controller);
-            ArgumentNullException.ThrowIfNull(valve);
+            ArgumentNullException.ThrowIfNull(actuator);
 
             if (totalSteps <= 0)
                 throw new ArgumentOutOfRangeException(nameof(totalSteps), "Total steps must be greater than zero.");
 
-            if (maxHeatingRate < 0)
-                throw new ArgumentOutOfRangeException(nameof(maxHeatingRate), "Max heating rate cannot be negative.");
+            if (maxHeatingPowerKW < 0)
+                throw new ArgumentOutOfRangeException(nameof(maxHeatingPowerKW), "Maximum heating power cannot be negative.");
 
-            if (deltaTime <= 0)
-                throw new ArgumentOutOfRangeException(nameof(deltaTime), "Delta time must be greater than zero.");
+            if (deltaTimeMinutes <= 0)
+                throw new ArgumentOutOfRangeException(nameof(deltaTimeMinutes), "Delta time must be greater than zero.");
 
             controller.Reset();
 
@@ -46,15 +46,15 @@ namespace SimulatorSA.Core.Services
                 "°C",
                 "Control error over time");
 
-            var valveSeries = CreateSeries(
+            var actuatorSeries = CreateSeries(
                 SimulationVariables.ValveOpening,
                 "%",
-                "Valve opening percentage over time");
+                "Actuator output percentage over time");
 
-            var heatingSeries = CreateSeries(
+            var heatingPowerSeries = CreateSeries(
                 SimulationVariables.HeatingEffect,
-                "°C",
-                "Heating effect applied each step");
+                "kW",
+                "Thermal power delivered by the heating system over time");
 
             var setpointSeries = CreateSeries(
                 SimulationVariables.Setpoint,
@@ -63,29 +63,30 @@ namespace SimulatorSA.Core.Services
 
             result.Series.Add(temperatureSeries);
             result.Series.Add(errorSeries);
-            result.Series.Add(valveSeries);
-            result.Series.Add(heatingSeries);
+            result.Series.Add(actuatorSeries);
+            result.Series.Add(heatingPowerSeries);
             result.Series.Add(setpointSeries);
 
             for (int step = 0; step < totalSteps; step++)
             {
-                double time = step * deltaTime;
+                double time = step * deltaTimeMinutes;
 
                 stepAction?.Invoke(room, step, time);
 
+                double controllerOutput = controller.CalculateOutput(room.ActualTemperature, deltaTimeMinutes);
+
+                actuator.SetOutput(controllerOutput);
+
+                double heatingPowerKW = actuator.GetThermalPowerKW(maxHeatingPowerKW);
+
+                room.ApplyThermalPower(heatingPowerKW, deltaTimeMinutes);
+
                 if (room is OfficeA office)
                 {
-                    office.ApplyInternalPerturbations(deltaTime);
+                    office.ApplyInternalPerturbations(deltaTimeMinutes);
                 }
 
-                double controllerOutput = controller.CalculateOutput(room.ActualTemperature, deltaTime);
-
-                valve.SetOpening(controllerOutput);
-
-                double heatingEffect = (valve.OpeningPercentage / 100.0) * maxHeatingRate;
-
-                room.ApplyHeatingRate(heatingEffect, deltaTime);
-                room.ApplyThermalLoss(outdoorTemperature, deltaTime);
+                room.ApplyEnvelopeHeatExchange(outdoorTemperature, deltaTimeMinutes);
 
                 double error = controller.Setpoint - room.ActualTemperature;
 
@@ -96,16 +97,16 @@ namespace SimulatorSA.Core.Services
 
                 snapshot.Values[SimulationVariables.Temperature] = room.ActualTemperature;
                 snapshot.Values[SimulationVariables.Error] = error;
-                snapshot.Values[SimulationVariables.ValveOpening] = valve.OpeningPercentage;
-                snapshot.Values[SimulationVariables.HeatingEffect] = heatingEffect;
+                snapshot.Values[SimulationVariables.ValveOpening] = actuator.OutputPercentage;
+                snapshot.Values[SimulationVariables.HeatingEffect] = heatingPowerKW;
                 snapshot.Values[SimulationVariables.Setpoint] = controller.Setpoint;
 
                 result.Snapshots.Add(snapshot);
 
                 AddPoint(temperatureSeries, time, room.ActualTemperature);
                 AddPoint(errorSeries, time, error);
-                AddPoint(valveSeries, time, valve.OpeningPercentage);
-                AddPoint(heatingSeries, time, heatingEffect);
+                AddPoint(actuatorSeries, time, actuator.OutputPercentage);
+                AddPoint(heatingPowerSeries, time, heatingPowerKW);
                 AddPoint(setpointSeries, time, controller.Setpoint);
             }
 

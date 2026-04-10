@@ -2,6 +2,7 @@
 using SimulatorSA.Core.Constants;
 using SimulatorSA.Core.Interfaces;
 using SimulatorSA.Core.Models;
+using SimulatorSA.Core.Models.SimulationAnalysis;
 using SimulatorSA.Core.Models.SimulationData;
 using SimulatorSA.Core.Services;
 using SimulatorSA.Core.Spaces;
@@ -15,17 +16,18 @@ namespace SimulatorSA.ConsoleApp
         public static void Main()
         {
             double setpoint = 22.0;
-            double deltaTime = 1.0;
-            int totalSteps = 70;
-            double outdoorTemperature = 10.0;
-            double maxHeatingRate = 0.2;
+            double deltaTimeMinutes = 1.0;
+            int totalSteps = 90;
+            double outdoorTemperature = 15.0;
+            double maxHeatingPowerKW = 5.0;
+            double comfortBandHalfWidth = 0.5;
             string roomName = "Office-A01";
 
             var pidController = new PidController(
                 setpoint: setpoint,
-                proportionalGain: 10.0,
-                integralGain: 0.2,
-                derivativeGain: 1.0);
+                proportionalGain: 15.0,
+                integralGain: 1.5,
+                derivativeGain: 0.6);
 
             var onOffController = new OnOffController(
                 setpoint: setpoint,
@@ -40,21 +42,36 @@ namespace SimulatorSA.ConsoleApp
                 roomName: roomName,
                 initialTemperature: 18.0,
                 outdoorTemperature: outdoorTemperature,
-                maxHeatingRate: maxHeatingRate,
+                maxHeatingPowerKW: maxHeatingPowerKW,
                 totalSteps: totalSteps,
-                deltaTime: deltaTime);
+                deltaTimeMinutes: deltaTimeMinutes);
 
             var onOffRun = RunSimulation(
                 controller: onOffController,
                 roomName: roomName,
                 initialTemperature: 18.0,
                 outdoorTemperature: outdoorTemperature,
-                maxHeatingRate: maxHeatingRate,
+                maxHeatingPowerKW: maxHeatingPowerKW,
                 totalSteps: totalSteps,
-                deltaTime: deltaTime);
+                deltaTimeMinutes: deltaTimeMinutes);
+
+            var metricsCalculator = new SimulationMetricsCalculator();
+
+            var pidMetrics = metricsCalculator.Calculate(
+                pidRun.Result,
+                comfortBandHalfWidth,
+                deltaTimeMinutes);
+
+            var onOffMetrics = metricsCalculator.Calculate(
+                onOffRun.Result,
+                comfortBandHalfWidth,
+                deltaTimeMinutes);
 
             PrintResult("PID Controller", pidRun.Result, pidRun.Events);
+            PrintMetrics("PID Controller", pidMetrics);
+
             PrintResult("On-Off Controller", onOffRun.Result, onOffRun.Events);
+            PrintMetrics("On-Off Controller", onOffMetrics);
         }
 
         private static (SimulationResult Result, List<SimulationEvent> Events) RunSimulation(
@@ -62,12 +79,12 @@ namespace SimulatorSA.ConsoleApp
             string roomName,
             double initialTemperature,
             double outdoorTemperature,
-            double maxHeatingRate,
+            double maxHeatingPowerKW,
             int totalSteps,
-            double deltaTime)
+            double deltaTimeMinutes)
         {
             var room = new OfficeA(roomName, initialTemperature);
-            var valve = new ValveActuator("Heating Valve");
+            var actuator = new ThermalActuator("Heating Actuator");
             var runner = new SimulationRunner();
             var events = new List<SimulationEvent>();
 
@@ -116,11 +133,11 @@ namespace SimulatorSA.ConsoleApp
             var result = runner.Run(
                 room: room,
                 controller: controller,
-                valve: valve,
+                actuator: actuator,
                 outdoorTemperature: outdoorTemperature,
-                maxHeatingRate: maxHeatingRate,
+                maxHeatingPowerKW: maxHeatingPowerKW,
                 totalSteps: totalSteps,
-                deltaTime: deltaTime,
+                deltaTimeMinutes: deltaTimeMinutes,
                 stepAction: perturbationScript);
 
             return (result, events);
@@ -139,8 +156,8 @@ namespace SimulatorSA.ConsoleApp
                 Console.WriteLine(
                     $"Time: {snapshot.Time,6:F1} min | " +
                     $"Temp: {snapshot.Values[SimulationVariables.Temperature]:F2} °C | " +
-                    $"Valve: {snapshot.Values[SimulationVariables.ValveOpening]:F2} % | " +
-                    $"Heat: {snapshot.Values[SimulationVariables.HeatingEffect]:F4} °C");
+                    $"Output: {snapshot.Values[SimulationVariables.ValveOpening]:F2} % | " +
+                    $"Thermal Power: {snapshot.Values[SimulationVariables.HeatingEffect]:F4} kW");
 
                 var eventsAtThisTime = events
                     .Where(e => e.Time == snapshot.Time)
@@ -151,6 +168,35 @@ namespace SimulatorSA.ConsoleApp
                     Console.WriteLine($"                 [Event] {simulationEvent.Description}");
                 }
             }
+        }
+
+        private static void PrintMetrics(string title, SimulationMetrics metrics)
+        {
+            Console.WriteLine();
+            Console.WriteLine($"----- {title} Metrics -----");
+            Console.WriteLine($"Final Temperature: {metrics.FinalTemperature:F2} °C");
+            Console.WriteLine($"Final Output: {metrics.FinalOutput:F2} %");
+
+            Console.WriteLine($"Mean Absolute Error: {metrics.MeanAbsoluteError:F4}");
+            Console.WriteLine($"Mean Squared Error: {metrics.MeanSquaredError:F4}");
+            Console.WriteLine($"Max Absolute Error: {metrics.MaxAbsoluteError:F4}");
+
+            Console.WriteLine($"Oscillation Amplitude: {metrics.TemperatureOscillationAmplitude:F4} °C");
+            Console.WriteLine($"Max Overshoot: {metrics.MaxOvershoot:F4} °C");
+            Console.WriteLine($"Max Undershoot: {metrics.MaxUndershoot:F4} °C");
+
+            Console.WriteLine($"Number of Turn Ons: {metrics.NumberOfTurnOns}");
+            Console.WriteLine($"Number of Turn Offs: {metrics.NumberOfTurnOffs}");
+            Console.WriteLine($"Total On Time: {metrics.TotalOnTime:F2} min");
+            Console.WriteLine($"Average On Cycle: {metrics.AverageOnCycleDuration:F2} min");
+            Console.WriteLine($"Average Off Cycle: {metrics.AverageOffCycleDuration:F2} min");
+
+            Console.WriteLine($"Comfort Band: [{metrics.ComfortBandLowerLimit:F2}, {metrics.ComfortBandUpperLimit:F2}] °C");
+            Console.WriteLine($"Time Within Comfort Band: {metrics.TimeWithinComfortBand:F2} min");
+            Console.WriteLine($"Comfort Band Percentage: {metrics.ComfortBandPercentage:F2} %");
+
+            Console.WriteLine($"Total Thermal Energy Delivered: {metrics.TotalThermalEnergyDelivered:F4} kWh");
+            Console.WriteLine($"Thermal Energy Per Comfort Time: {metrics.ThermalEnergyPerComfortTime:F4} kWh/min");
         }
     }
 }

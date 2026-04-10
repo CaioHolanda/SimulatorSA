@@ -6,30 +6,58 @@ namespace SimulatorSA.Core.Models
     {
         public string Name { get; }
         public double ActualTemperature { get; protected set; }
-        public double LossCoefficient { get; }
 
-        public Room(string name, double initialTemperature, double lossCoefficient)
+        // UA simplificado do ambiente
+        public double HeatLossCoefficientKWPerDegree { get; }
+
+        // Capacidade térmica efetiva do ambiente
+        public double ThermalCapacityKWhPerDegree { get; }
+
+        public Room(
+            string name,
+            double initialTemperature,
+            double heatLossCoefficientKWPerDegree,
+            double thermalCapacityKWhPerDegree)
         {
+            if (thermalCapacityKWhPerDegree <= 0)
+                throw new ArgumentOutOfRangeException(
+                    nameof(thermalCapacityKWhPerDegree),
+                    "Thermal capacity must be greater than zero.");
+
+            if (heatLossCoefficientKWPerDegree < 0)
+                throw new ArgumentOutOfRangeException(
+                    nameof(heatLossCoefficientKWPerDegree),
+                    "Heat loss coefficient cannot be negative.");
+
             Name = name;
             ActualTemperature = initialTemperature;
-            LossCoefficient = lossCoefficient;
+            HeatLossCoefficientKWPerDegree = heatLossCoefficientKWPerDegree;
+            ThermalCapacityKWhPerDegree = thermalCapacityKWhPerDegree;
         }
 
-        public void ApplyHeatingRate(double temperatureRate, double deltaTime)
+        public void ApplyThermalPower(double thermalPowerKW, double deltaTimeMinutes)
         {
-            if (deltaTime <= 0)
-                throw new ArgumentOutOfRangeException(nameof(deltaTime), "Delta time must be greater than zero.");
+            if (deltaTimeMinutes <= 0)
+                throw new ArgumentOutOfRangeException(
+                    nameof(deltaTimeMinutes),
+                    "Delta time must be greater than zero.");
 
-            ActualTemperature += temperatureRate * deltaTime;
+            double deltaTimeHours = deltaTimeMinutes / 60.0;
+            double transferredEnergyKWh = thermalPowerKW * deltaTimeHours;
+            double deltaTemperature = transferredEnergyKWh / ThermalCapacityKWhPerDegree;
+
+            ActualTemperature += deltaTemperature;
         }
 
-        public void ApplyThermalLoss(double outdoorTemperature, double deltaTime)
+        public double CalculateEnvelopeThermalPowerKW(double outdoorTemperature)
         {
-            if (deltaTime <= 0)
-                throw new ArgumentOutOfRangeException(nameof(deltaTime), "Delta time must be greater than zero.");
+            return HeatLossCoefficientKWPerDegree * (outdoorTemperature - ActualTemperature);
+        }
 
-            double thermalLoss = (ActualTemperature - outdoorTemperature) * LossCoefficient * deltaTime;
-            ActualTemperature -= thermalLoss;
+        public void ApplyEnvelopeHeatExchange(double outdoorTemperature, double deltaTimeMinutes)
+        {
+            double envelopeThermalPowerKW = CalculateEnvelopeThermalPowerKW(outdoorTemperature);
+            ApplyThermalPower(envelopeThermalPowerKW, deltaTimeMinutes);
         }
     }
 }

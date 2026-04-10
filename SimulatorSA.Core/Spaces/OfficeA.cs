@@ -9,7 +9,11 @@ namespace SimulatorSA.Core.Spaces
         public bool IsOccupied { get; private set; }
 
         public OfficeA(string name, double initialTemperature)
-            : base(name, initialTemperature, lossCoefficient: 0.005)
+            : base(
+                  name,
+                  initialTemperature,
+                  heatLossCoefficientKWPerDegree: 0.12,
+                  thermalCapacityKWhPerDegree: 0.50)
         {
         }
 
@@ -28,20 +32,20 @@ namespace SimulatorSA.Core.Spaces
             IsOccupied = isOccupied;
         }
 
-        public void ApplyInternalPerturbations(double deltaTime)
+        public void ApplyInternalPerturbations(double deltaTimeMinutes)
         {
-            double perturbationRate = 0;
+            double internalThermalPowerKW = 0.0;
 
             if (IsWindowOpen)
-                perturbationRate += -0.10;
+                internalThermalPowerKW += -0.50; // perda extra simplificada
 
             if (IsComputerOn)
-                perturbationRate += 0.04;
+                internalThermalPowerKW += 0.10; // ganho interno do computador
 
             if (IsOccupied)
-                perturbationRate += 0.03;
+                internalThermalPowerKW += 0.08; // ganho interno de ocupação
 
-            ApplyHeatingRate(perturbationRate, deltaTime);
+            ApplyThermalPower(internalThermalPowerKW, deltaTimeMinutes);
         }
     }
 }

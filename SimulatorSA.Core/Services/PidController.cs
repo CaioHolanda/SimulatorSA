@@ -1,9 +1,9 @@
 ﻿using SimulatorSA.Core.Interfaces;
+using System;
 
 namespace SimulatorSA.Core.Services
 {
-
-    public class PidController:IController
+    public class PidController : IController
     {
         public double Setpoint { get; }
         public double Kp { get; }
@@ -15,10 +15,10 @@ namespace SimulatorSA.Core.Services
         private bool _isFirstRun;
 
         public PidController(
-            double setpoint, 
+            double setpoint,
             double proportionalGain,
-            double integralGain, 
-            double derivativeGain) 
+            double integralGain,
+            double derivativeGain)
         {
             Setpoint = setpoint;
             Kp = proportionalGain;
@@ -26,8 +26,8 @@ namespace SimulatorSA.Core.Services
             Kd = derivativeGain;
 
             Reset();
-            
         }
+
         public double CalculateOutput(double measuredValue, double deltaTime)
         {
             if (deltaTime <= 0)
@@ -35,13 +35,23 @@ namespace SimulatorSA.Core.Services
 
             double error = Setpoint - measuredValue;
 
+            // Sistema apenas de aquecimento:
+            // se não há demanda, não aquece.
+            if (error <= 0)
+            {
+                _previousError = 0;
+                _integralAccumulator = 0;
+                _isFirstRun = true;
+
+                return 0;
+            }
+
             double outputP = error * Kp;
 
             _integralAccumulator += error * deltaTime;
             double outputI = _integralAccumulator * Ki;
 
             double derivative = 0;
-
             if (!_isFirstRun)
             {
                 derivative = (error - _previousError) / deltaTime;
@@ -54,8 +64,9 @@ namespace SimulatorSA.Core.Services
             _previousError = error;
             _isFirstRun = false;
 
-            return output;
+            return Math.Clamp(output, 0.0, 100.0);
         }
+
         public void Reset()
         {
             _previousError = 0;
