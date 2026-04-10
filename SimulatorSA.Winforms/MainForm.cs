@@ -1,16 +1,22 @@
 using SimulatorSA.Core.Actuators;
 using SimulatorSA.Core.Constants;
-using System.Linq;
 using SimulatorSA.Core.Interfaces;
+using SimulatorSA.Core.Models;
+using SimulatorSA.Core.Models.SimulationAnalysis;
 using SimulatorSA.Core.Models.SimulationData;
 using SimulatorSA.Core.Services;
 using SimulatorSA.Core.Spaces;
+using System.Globalization;
 
 namespace SimulatorSA.Winforms;
 
 public partial class MainForm : Form
 {
-    private SimulationResult? _lastResult;
+    private SimulationResult? _lastPidResult;
+    private SimulationResult? _lastOnOffResult;
+    private SimulationMetrics? _lastPidMetrics;
+    private SimulationMetrics? _lastOnOffMetrics;
+
     public MainForm()
     {
         InitializeComponent();
@@ -20,75 +26,98 @@ public partial class MainForm : Form
 
     private void MainForm_Load(object sender, EventArgs e)
     {
-
     }
 
-    private void label2_Click(object sender, EventArgs e)
-    {
-
-    }
-
-    private void label7_Click(object sender, EventArgs e)
-    {
-
-    }
     private void LoadDefaultValues()
     {
-        txtRoomName.Text = "Office A";
+        txtRoomName.Text = "Office-A01";
         txtInitialTemp.Text = "18";
         txtOutdoorTemp.Text = "10";
         txtSetpoint.Text = "22";
-        txtKp.Text = "10";
-        txtKi.Text = "0.5";
-        txtKd.Text = "0.1";
-        txtTimeStep.Text = "1";
         txtSteps.Text = "70";
-        txtHeatRate.Text = "0.2";
+        txtTimeStep.Text = "1";
+        txtMaxHeatingPower.Text = "2.0";
+
+        txtKp.Text = "10";
+        txtKi.Text = "0.2";
+        txtKd.Text = "1.0";
+
+        txtPercentageWhenOn.Text = "100";
+        txtPercentageWhenOff.Text = "0";
+        txtHysteresis.Text = "1.0";
+        txtMinOnTime.Text = "1";
+        txtMinOffTime.Text = "1";
     }
+
     private double ReadDouble(TextBox textBox)
     {
-        return double.Parse(textBox.Text);
+        return double.Parse(textBox.Text, CultureInfo.InvariantCulture);
     }
 
     private int ReadInt(TextBox textBox)
     {
-        return int.Parse(textBox.Text);
+        return int.Parse(textBox.Text, CultureInfo.InvariantCulture);
     }
 
     private void btnRun_Click(object sender, EventArgs e)
     {
         try
         {
-            double deltaTime = ReadDouble(txtTimeStep);
+            string roomName = txtRoomName.Text.Trim();
+            double initialTemperature = ReadDouble(txtInitialTemp);
+            double outdoorTemperature = ReadDouble(txtOutdoorTemp);
+            double setpoint = ReadDouble(txtSetpoint);
+            int totalSteps = ReadInt(txtSteps);
+            double deltaTimeMinutes = ReadDouble(txtTimeStep);
+            double maxHeatingPowerKW = ReadDouble(txtMaxHeatingPower);
 
-            var room = new OfficeA(
-                txtRoomName.Text,
-                ReadDouble(txtInitialTemp));
-
-            IController controller = new PidController(
-                setpoint: ReadDouble(txtSetpoint),
+            IController pidController = new PidController(
+                setpoint: setpoint,
                 proportionalGain: ReadDouble(txtKp),
                 integralGain: ReadDouble(txtKi),
-                differentialGain: ReadDouble(txtKd));
+                derivativeGain: ReadDouble(txtKd));
 
-            var valve = new ThermalActuator("Heating Valve");
+            IController onOffController = new OnOffController(
+                setpoint: setpoint,
+                outputWhenOn: ReadDouble(txtPercentageWhenOn),
+                outputWhenOff: ReadDouble(txtPercentageWhenOff),
+                hysteresis: ReadDouble(txtHysteresis),
+                minOnTime: ReadDouble(txtMinOnTime),
+                minOffTime: ReadDouble(txtMinOffTime));
 
-            var runner = new SimulationRunner();
+            _lastPidResult = RunSimulation(
+                controller: pidController,
+                roomName: roomName,
+                initialTemperature: initialTemperature,
+                outdoorTemperature: outdoorTemperature,
+                maxHeatingPowerKW: maxHeatingPowerKW,
+                totalSteps: totalSteps,
+                deltaTimeMinutes: deltaTimeMinutes);
 
-            _lastResult = runner.Run(
-                room: room,
-                controller: controller,
-                valve: valve,
-                outdoorTemperature: ReadDouble(txtOutdoorTemp),
-                maxHeatingDelta: ReadDouble(txtHeatRate),
-                totalSteps: ReadInt(txtSteps),
-                deltaTime: deltaTime);
+            _lastOnOffResult = RunSimulation(
+                controller: onOffController,
+                roomName: roomName,
+                initialTemperature: initialTemperature,
+                outdoorTemperature: outdoorTemperature,
+                maxHeatingPowerKW: maxHeatingPowerKW,
+                totalSteps: totalSteps,
+                deltaTimeMinutes: deltaTimeMinutes);
 
-            if (_lastResult is not null)
-            {
-                UpdateSummary(_lastResult);
-                PlotResult(_lastResult);
-            }
+            var metricsCalculator = new SimulationMetricsCalculator();
+            const double comfortBandHalfWidth = 0.5;
+
+            _lastPidMetrics = metricsCalculator.Calculate(
+                _lastPidResult,
+                comfortBandHalfWidth,
+                deltaTimeMinutes);
+
+            _lastOnOffMetrics = metricsCalculator.Calculate(
+                _lastOnOffResult,
+                comfortBandHalfWidth,
+                deltaTimeMinutes);
+
+            UpdateSummary();
+            PlotAllResults();
         }
         catch (Exception ex)
         {
@@ -99,52 +128,101 @@ public partial class MainForm : Form
                 MessageBoxIcon.Error);
         }
     }
-    private void btnReset_Click_1(object sender, EventArgs e)
-    {
-        _lastResult = null;
 
-        SetDefaultValues();
-        ClearResults();
-    }
-    private void UpdateSummary(SimulationResult result)
+    private SimulationResult RunSimulation(
+        IController controller,
+        string roomName,
+        double initialTemperature,
+        double outdoorTemperature,
+        double maxHeatingPowerKW,
+        int totalSteps,
+        double deltaTimeMinutes)
     {
-        var last = result.Snapshots.Last();
+        var room = new OfficeA(roomName, initialTemperature);
+        var actuator = new ThermalActuator("Heating Actuator");
+        var runner = new SimulationRunner();
 
-        lblFinalTemp.Text = $"Temp: {last.Values[SimulationVariables.Temperature]:F2} °C";
-        lblFinalError.Text = $"Error: {last.Values[SimulationVariables.Error]:F2}";
-        lblFinalValve.Text = $"Valve: {last.Values[SimulationVariables.ValveOpening]:F2} %";
-        lblSteps.Text = $"Steps: {result.Snapshots.Count}";
+        Action<Room, int, double> perturbationScript = BuildPerturbationScript();
+
+        return runner.Run(
+            room: room,
+            controller: controller,
+            actuator: actuator,
+            outdoorTemperature: outdoorTemperature,
+            maxHeatingPowerKW: maxHeatingPowerKW,
+            totalSteps: totalSteps,
+            deltaTimeMinutes: deltaTimeMinutes,
+            stepAction: perturbationScript);
     }
-    private void LoadGrid(SimulationResult result)
+
+    private static Action<Room, int, double> BuildPerturbationScript()
     {
-        var rows = result.Snapshots.Select(snapshot => new
+        return (currentRoom, step, time) =>
         {
-            Time = snapshot.Time,
-            Temperature = snapshot.Values[SimulationVariables.Temperature],
-            Error = snapshot.Values[SimulationVariables.Error],
-            ValveOpening = snapshot.Values[SimulationVariables.ValveOpening],
-            HeatingEffect = snapshot.Values[SimulationVariables.HeatingEffect],
-            Setpoint = snapshot.Values[SimulationVariables.Setpoint]
-        }).ToList();
+            if (currentRoom is not OfficeA office)
+                return;
 
-        //gridResults.DataSource = null;
-        //gridResults.DataSource = rows;
+            if (step == 10)
+                office.SetOccupied(true);
 
-        //gridResults.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
-        //gridResults.ReadOnly = true;
-        //gridResults.AllowUserToAddRows = false;
-        //gridResults.AllowUserToDeleteRows = false;
-        //gridResults.AllowUserToResizeRows = false;
-        //gridResults.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-        //gridResults.MultiSelect = false;
+            if (step == 15)
+                office.SetComputerOn(true);
+
+            if (step == 25)
+                office.SetWindowOpen(true);
+
+            if (step == 40)
+                office.SetWindowOpen(false);
+
+            if (step == 50)
+                office.SetComputerOn(false);
+
+            if (step == 60)
+                office.SetOccupied(false);
+        };
     }
-    private void PlotResult(SimulationResult result)
+
+    private void UpdateSummary()
+    {
+        if (_lastPidMetrics is null || _lastOnOffMetrics is null ||
+            _lastPidResult is null || _lastOnOffResult is null)
+            return;
+
+        lblPIDFinalTemperature.Text = $"Final Room Temperature: {_lastPidMetrics.FinalTemperature:F2} °C";
+        lblPIDActuator.Text = $"Actuator: {_lastPidMetrics.FinalOutput:F2} %";
+        lblPIDSteps.Text = $"Steps: {_lastPidResult.Snapshots.Count}";
+        lblPIDAbsErrorAverage.Text = $"Abs Error Average: {_lastPidMetrics.MeanAbsoluteError:F3}";
+        lblPIDMaxOvershoot.Text = $"Max Overshoot: {_lastPidMetrics.MaxOvershoot:F3} °C";
+        lblPIDComfortZone.Text = $"Comfort Zone Permanency: {_lastPidMetrics.ComfortBandPercentage:F1} %";
+        lblPIDThermalEnergy.Text = $"Total Thermal Energy Delivered: {_lastPidMetrics.TotalThermalEnergyDelivered:F3} kWh";
+
+        lblOnOffFinalTemperature.Text = $"Final Room Temperature: {_lastOnOffMetrics.FinalTemperature:F2} °C";
+        lblOnOffActuator.Text = $"Actuator: {_lastOnOffMetrics.FinalOutput:F2} %";
+        lblOnOffSteps.Text = $"Steps: {_lastOnOffResult.Snapshots.Count}";
+        lblOnOffAbsErrorAverage.Text = $"Abs Error Average: {_lastOnOffMetrics.MeanAbsoluteError:F3}";
+        lblOnOffMaxOvershoot.Text = $"Max Overshoot: {_lastOnOffMetrics.MaxOvershoot:F3} °C";
+        lblOnOffComfortZone.Text = $"Comfort Zone Permanency: {_lastOnOffMetrics.ComfortBandPercentage:F1} %";
+        lblOnOffThermalEnergy.Text = $"Total Thermal Energy Delivered: {_lastOnOffMetrics.TotalThermalEnergyDelivered:F3} kWh";
+    }
+
+    private void PlotAllResults()
+    {
+        if (_lastPidResult is null || _lastOnOffResult is null)
+            return;
+
+        PlotTemperature(graphPIDTemperature, _lastPidResult, "PID Temperature");
+        PlotActuator(graphPIDActuator, _lastPidResult, "PID Actuator Output");
+
+        PlotTemperature(graphOnOffTemperature, _lastOnOffResult, "On-Off Temperature");
+        PlotActuator(graphOnOffActuator, _lastOnOffResult, "On-Off Actuator Output");
+    }
+
+    private void PlotTemperature(ScottPlot.WinForms.FormsPlot plot, SimulationResult result, string title)
     {
         var temperatureSeries = result.GetSeries(SimulationVariables.Temperature);
         var setpointSeries = result.GetSeries(SimulationVariables.Setpoint);
-        var valveSeries = result.GetSeries(SimulationVariables.ValveOpening);
 
-        if (temperatureSeries is null || setpointSeries is null || valveSeries is null)
+        if (temperatureSeries is null || setpointSeries is null)
             return;
 
         double[] tempX = temperatureSeries.Points.Select(p => p.Time).ToArray();
@@ -153,73 +231,90 @@ public partial class MainForm : Form
         double[] setpointX = setpointSeries.Points.Select(p => p.Time).ToArray();
         double[] setpointY = setpointSeries.Points.Select(p => p.Value).ToArray();
 
-        double[] valveX = valveSeries.Points.Select(p => p.Time).ToArray();
-        double[] valveY = valveSeries.Points.Select(p => p.Value).ToArray();
-
-        graphPIDTemperature.Plot.Clear();
-        formsPlotValve.Plot.Clear();
-
-        graphPIDTemperature.Plot.Add.Scatter(tempX, tempY);
-        graphPIDTemperature.Plot.Add.Scatter(setpointX, setpointY);
-        graphPIDTemperature.Plot.Title("Temperature");
-        graphPIDTemperature.Plot.XLabel("Time (min)");
-        graphPIDTemperature.Plot.YLabel("Temperature (°C)");
-        graphPIDTemperature.Plot.Axes.AutoScale();
-        graphPIDTemperature.Refresh();
-
-        formsPlotValve.Plot.Add.Scatter(valveX, valveY);
-        formsPlotValve.Plot.Title("Valve Opening");
-        formsPlotValve.Plot.XLabel("Time (min)");
-        formsPlotValve.Plot.YLabel("Valve (%)");
-        formsPlotValve.Plot.Axes.AutoScale();
-        formsPlotValve.Refresh();
+        plot.Plot.Clear();
+        plot.Plot.Add.Scatter(tempX, tempY);
+        plot.Plot.Add.Scatter(setpointX, setpointY);
+        plot.Plot.Title(title);
+        plot.Plot.XLabel("Time (min)");
+        plot.Plot.YLabel("Temperature (°C)");
+        plot.Plot.Axes.AutoScale();
+        plot.Refresh();
     }
-    private void SetDefaultValues()
+
+    private void PlotActuator(ScottPlot.WinForms.FormsPlot plot, SimulationResult result, string title)
     {
-        txtRoomName.Text = "Office A";
-        txtInitialTemp.Text = "18";
-        txtOutdoorTemp.Text = "12";
-        txtSetpoint.Text = "22";
+        var outputSeries = result.GetSeries(SimulationVariables.ValveOpening);
 
-        txtKp.Text = "8";
-        txtKi.Text = "1";
-        txtKd.Text = "0";
+        if (outputSeries is null)
+            return;
 
-        txtTimeStep.Text = "1";
-        txtSteps.Text = "200";
-        txtHeatRate.Text = "0.5";
+        double[] x = outputSeries.Points.Select(p => p.Time).ToArray();
+        double[] y = outputSeries.Points.Select(p => p.Value).ToArray();
+
+        plot.Plot.Clear();
+        plot.Plot.Add.Scatter(x, y);
+        plot.Plot.Title(title);
+        plot.Plot.XLabel("Time (min)");
+        plot.Plot.YLabel("Output (%)");
+        plot.Plot.Axes.AutoScale();
+        plot.Refresh();
     }
+
+    private void btnReset_Click(object sender, EventArgs e)
+    {
+        _lastPidResult = null;
+        _lastOnOffResult = null;
+        _lastPidMetrics = null;
+        _lastOnOffMetrics = null;
+
+        LoadDefaultValues();
+        ClearResults();
+    }
+
     private void ClearResults()
     {
-        lblFinalTemp.Text = "Temp: -";
-        lblFinalError.Text = "Error: -";
-        lblFinalValve.Text = "Valve: -";
-        lblSteps.Text = "Steps: -";
+        lblPIDFinalTemperature.Text = "Final Room Temperature: -";
+        lblPIDActuator.Text = "Actuator: -";
+        lblPIDSteps.Text = "Steps: -";
+        lblPIDAbsErrorAverage.Text = "Abs Error Average: -";
+        lblPIDMaxOvershoot.Text = "Max Overshoot: -";
+        lblPIDComfortZone.Text = "Comfort Zone Permanency: -";
+        lblPIDThermalEnergy.Text = "Total Thermal Energy Delivered: -";
+
+        lblOnOffFinalTemperature.Text = "Final Room Temperature: -";
+        lblOnOffActuator.Text = "Actuator: -";
+        lblOnOffSteps.Text = "Steps: -";
+        lblOnOffAbsErrorAverage.Text = "Abs Error Average: -";
+        lblOnOffMaxOvershoot.Text = "Max Overshoot: -";
+        lblOnOffComfortZone.Text = "Comfort Zone Permanency: -";
+        lblOnOffThermalEnergy.Text = "Total Thermal Energy Delivered: -";
 
         graphPIDTemperature.Plot.Clear();
         graphPIDTemperature.Refresh();
 
-        formsPlotValve.Plot.Clear();
-        formsPlotValve.Refresh();
+        graphPIDActuator.Plot.Clear();
+        graphPIDActuator.Refresh();
+
+        graphOnOffTemperature.Plot.Clear();
+        graphOnOffTemperature.Refresh();
+
+        graphOnOffActuator.Plot.Clear();
+        graphOnOffActuator.Refresh();
     }
 
     private void tblParameters_Paint(object sender, PaintEventArgs e)
     {
-
     }
 
     private void label2_Click_1(object sender, EventArgs e)
     {
-
     }
 
     private void label4_Click(object sender, EventArgs e)
     {
-
     }
 
     private void label22_Click(object sender, EventArgs e)
     {
-
     }
 }
