@@ -5,6 +5,8 @@
   <Folder Name="/SimulatorSa.WinForms/">
     <Project Path="SimulatorSa.WinForms/SimulatorSA.WinForms.csproj" />
   </Folder>
+  <Project Path="SimulatorSA.Application/SimulatorSA.Application.csproj" />
+  <Project Path="SimulatorSA.Bacnet/SimulatorSA.Bacnet.csproj" />
   <Project Path="SimulatorSA.Console/SimulatorSA.Console.csproj" />
   <Project Path="SimulatorSA.Tests/SimulatorSA.Tests.csproj" />
 </Solution>

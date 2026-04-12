@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\SimulatorSA.Core\SimulatorSA.Core.csproj" />
+    <ProjectReference Include="..\SimulatorSA.Application\SimulatorSA.Application.csproj" />
   </ItemGroup>
 
   <ItemGroup>

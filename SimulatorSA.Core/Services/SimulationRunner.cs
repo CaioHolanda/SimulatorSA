@@ -92,7 +92,12 @@ namespace SimulatorSA.Core.Services
 
                 var snapshot = new SimulationSnapshot
                 {
-                    Time = time
+                    Time = time,
+                    RoomTemperature = room.ActualTemperature,
+                    Setpoint = controller.Setpoint,
+                    ControllerOutput = actuator.OutputPercentage,
+                    ControlError = error,
+                    HeatingPowerKW = heatingPowerKW
                 };
 
                 snapshot.Values[SimulationVariables.Temperature] = room.ActualTemperature;
