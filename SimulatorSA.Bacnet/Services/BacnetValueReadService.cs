@@ -54,17 +54,20 @@ public class BacnetValueReadService : IBacnetValueReadService
 
         var snapshot = _simulationStateProvider.GetCurrentSnapshot();
 
-        return point.PointKey switch
+        return ReadFromSnapshot(point.PointKey, snapshot);
+    }
+    private static BacnetOperationResult ReadFromSnapshot(string pointKey, SimulationSnapshot snapshot)
+    {
+        return pointKey switch
         {
             "room.temperature" => BacnetOperationResult.Ok(snapshot.RoomTemperature),
             "room.setpoint" => BacnetOperationResult.Ok(snapshot.Setpoint),
             "controller.output" => BacnetOperationResult.Ok(snapshot.ControllerOutput),
             "room.error" => BacnetOperationResult.Ok(snapshot.ControlError),
             "heating.power" => BacnetOperationResult.Ok(snapshot.HeatingPowerKW),
-
             _ => BacnetOperationResult.Fail(
                 "unsupported_point",
-                $"Point key '{point.PointKey}' is not supported by the read service.")
+                $"Point key '{pointKey}' is not supported by the read service.")
         };
     }
 }

@@ -1,4 +1,7 @@
+using System;
+using System.Windows.Forms;
 namespace SimulatorSA.Winforms;
+
 
 static class Program
 {
