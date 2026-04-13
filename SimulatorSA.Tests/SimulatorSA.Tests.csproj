@@ -19,7 +19,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\SimulatorSA.Core\SimulatorSA.Core.csproj" />
+    <ProjectReference Include="..\SimulatorSA.Application\SimulatorSA.Application.csproj" />
+    <ProjectReference Include="..\SimulatorSA.Bacnet\SimulatorSA.Bacnet.csproj" />
+      <ProjectReference Include="..\SimulatorSa.Core\SimulatorSA.Core.csproj" />
   </ItemGroup>
 
 </Project>
