@@ -24,6 +24,23 @@ public class BacnetValueReadServiceTests
         Assert.True(result.Success);
         Assert.Equal(21.5, Assert.IsType<double>(result.Value));
     }
+    [Fact]
+    public void ReadPresentValue_ByObjectTypeAndInstance_ShouldReturnRoomError()
+    {
+        // Arrange
+        var snapshot = CreateSnapshot();
+        var stateProvider = new FakeSimulationStateProvider(snapshot);
+        var pointResolver = new FakeBacnetPointResolver();
+
+        var service = new BacnetValueReadService(stateProvider, pointResolver);
+
+        // Act
+        var result = service.ReadPresentValue(BacnetObjectKind.AnalogInput, 2);
+
+        // Assert
+        Assert.True(result.Success);
+        Assert.Equal(0.5, Assert.IsType<double>(result.Value));
+    }
 
     [Fact]
     public void ReadPresentValue_ByPointKey_ShouldReturnSetpoint()
