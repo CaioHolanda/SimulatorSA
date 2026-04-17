@@ -7,12 +7,11 @@ Essa interface será usada pelo SimulatorSA.Bacnet para perguntar:
 
 Ela é uma porta de leitura do sistema.
 */
-using SimulatorSA.Core.Models.SimulationData;
-
 namespace SimulatorSA.Application.Interfaces;
 
+using SimulatorSA.Application.DTOs;
 
 public interface ISimulationStateProvider
 {
-    SimulationSnapshot GetCurrentSnapshot();
+    SimulationStateDto GetCurrentState();
 }
