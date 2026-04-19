@@ -2,7 +2,7 @@
 using System;
 using Xunit;
 
-namespace SimulatorSA.Tests.Services;
+namespace SimulatorSA.Tests.Bacnet.Services;
 
 public class OnOffControllerTests
 {

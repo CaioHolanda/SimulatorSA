@@ -1,4 +1,4 @@
-﻿// Responsavel por fornecer a HMI uma visao simplificada do estado atual
+﻿// Responsavel por fornecer a HMI uma visao simplificada de supervisao do estado atual
 
 namespace SimulatorSA.Application.Interfaces;
 

@@ -3,14 +3,14 @@ Papel do BacnetValueReadService
 
     receber um pedido de leitura;
     localizar o ponto BACnet correspondente;
-    obter o SimulationSnapshot atual;
-    extrair do snapshot o valor correto;
+    obter o estado atual da simulacao;
+    extrair do estado o valor correto;
     devolver isso dentro de um BacnetOperationResult.
  */
+using SimulatorSA.Application.DTOs;
 using SimulatorSA.Application.Interfaces;
 using SimulatorSA.Bacnet.Mapping;
 using SimulatorSA.Bacnet.Models;
-using SimulatorSA.Core.Models.SimulationData;
 
 namespace SimulatorSA.Bacnet.Services;
 
@@ -52,19 +52,17 @@ public class BacnetValueReadService : IBacnetValueReadService
                 $"No BACnet point was found for point key '{pointKey}'.");
         }
 
-        var snapshot = _simulationStateProvider.GetCurrentSnapshot();
+        var state = _simulationStateProvider.GetCurrentState();
 
-        return ReadFromSnapshot(point.PointKey, snapshot);
+        return ReadFromState(point.PointKey, state);
     }
-    private static BacnetOperationResult ReadFromSnapshot(string pointKey, SimulationSnapshot snapshot)
+    private static BacnetOperationResult ReadFromState(string pointKey, SimulationStateDto state)
     {
         return pointKey switch
         {
-            "room.temperature" => BacnetOperationResult.Ok(snapshot.RoomTemperature),
-            "room.setpoint" => BacnetOperationResult.Ok(snapshot.Setpoint),
-            "controller.output" => BacnetOperationResult.Ok(snapshot.ControllerOutput),
-            "room.error" => BacnetOperationResult.Ok(snapshot.ControlError),
-            "heating.power" => BacnetOperationResult.Ok(snapshot.HeatingPowerKW),
+            "room.temperature" => BacnetOperationResult.Ok(state.IndoorTemperature),
+            "room.setpoint" => BacnetOperationResult.Ok(state.Setpoint),
+            "controller.output" => BacnetOperationResult.Ok(state.HeaterOutput),
             _ => BacnetOperationResult.Fail(
                 "unsupported_point",
                 $"Point key '{pointKey}' is not supported by the read service.")

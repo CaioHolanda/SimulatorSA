@@ -8,7 +8,6 @@ public class TrendSampleDto
     public double IndoorTemperature { get; set; }
     public double OutdoorTemperature { get; set; }
     public double Setpoint { get; set; }
-
     public double HeaterOutput { get; set; }
     public bool HeaterEnabled { get; set; }
 }

@@ -1,9 +1,9 @@
-﻿using SimulatorSA.Application.Interfaces;
+﻿using SimulatorSA.Application.DTOs;
+using SimulatorSA.Application.Interfaces;
 using SimulatorSA.Bacnet.Mapping;
 using SimulatorSA.Bacnet.Services;
-using SimulatorSA.Core.Models.SimulationData;
 
-namespace SimulatorSA.Tests.Services;
+namespace SimulatorSA.Tests.Bacnet.Services;
 
 public class BacnetValueReadServiceTests
 {
@@ -11,8 +11,8 @@ public class BacnetValueReadServiceTests
     public void ReadPresentValue_ByObjectTypeAndInstance_ShouldReturnRoomTemperature()
     {
         // Arrange
-        var snapshot = CreateSnapshot();
-        var stateProvider = new FakeSimulationStateProvider(snapshot);
+        var state = CreateState();
+        var stateProvider = new FakeSimulationStateProvider(state);
         var pointResolver = new FakeBacnetPointResolver();
 
         var service = new BacnetValueReadService(stateProvider, pointResolver);
@@ -24,30 +24,13 @@ public class BacnetValueReadServiceTests
         Assert.True(result.Success);
         Assert.Equal(21.5, Assert.IsType<double>(result.Value));
     }
-    [Fact]
-    public void ReadPresentValue_ByObjectTypeAndInstance_ShouldReturnRoomError()
-    {
-        // Arrange
-        var snapshot = CreateSnapshot();
-        var stateProvider = new FakeSimulationStateProvider(snapshot);
-        var pointResolver = new FakeBacnetPointResolver();
-
-        var service = new BacnetValueReadService(stateProvider, pointResolver);
-
-        // Act
-        var result = service.ReadPresentValue(BacnetObjectKind.AnalogInput, 2);
-
-        // Assert
-        Assert.True(result.Success);
-        Assert.Equal(0.5, Assert.IsType<double>(result.Value));
-    }
 
     [Fact]
     public void ReadPresentValue_ByPointKey_ShouldReturnSetpoint()
     {
         // Arrange
-        var snapshot = CreateSnapshot();
-        var stateProvider = new FakeSimulationStateProvider(snapshot);
+        var state = CreateState();
+        var stateProvider = new FakeSimulationStateProvider(state);
         var pointResolver = new FakeBacnetPointResolver();
 
         var service = new BacnetValueReadService(stateProvider, pointResolver);
@@ -61,11 +44,29 @@ public class BacnetValueReadServiceTests
     }
 
     [Fact]
+    public void ReadPresentValue_ByPointKey_ShouldReturnControllerOutput()
+    {
+        // Arrange
+        var state = CreateState();
+        var stateProvider = new FakeSimulationStateProvider(state);
+        var pointResolver = new FakeBacnetPointResolver();
+
+        var service = new BacnetValueReadService(stateProvider, pointResolver);
+
+        // Act
+        var result = service.ReadPresentValue("controller.output");
+
+        // Assert
+        Assert.True(result.Success);
+        Assert.Equal(55.0, Assert.IsType<double>(result.Value));
+    }
+
+    [Fact]
     public void ReadPresentValue_ByObjectTypeAndInstance_ShouldReturnPointNotFound_WhenPointDoesNotExist()
     {
         // Arrange
-        var snapshot = CreateSnapshot();
-        var stateProvider = new FakeSimulationStateProvider(snapshot);
+        var state = CreateState();
+        var stateProvider = new FakeSimulationStateProvider(state);
         var pointResolver = new FakeBacnetPointResolver();
 
         var service = new BacnetValueReadService(stateProvider, pointResolver);
@@ -83,8 +84,8 @@ public class BacnetValueReadServiceTests
     public void ReadPresentValue_ByPointKey_ShouldReturnPointNotFound_WhenPointKeyDoesNotExist()
     {
         // Arrange
-        var snapshot = CreateSnapshot();
-        var stateProvider = new FakeSimulationStateProvider(snapshot);
+        var state = CreateState();
+        var stateProvider = new FakeSimulationStateProvider(state);
         var pointResolver = new FakeBacnetPointResolver();
 
         var service = new BacnetValueReadService(stateProvider, pointResolver);
@@ -102,8 +103,8 @@ public class BacnetValueReadServiceTests
     public void ReadPresentValue_ShouldReturnUnsupportedPoint_WhenPointExistsInCatalogButIsNotHandledByReadService()
     {
         // Arrange
-        var snapshot = CreateSnapshot();
-        var stateProvider = new FakeSimulationStateProvider(snapshot);
+        var state = CreateState();
+        var stateProvider = new FakeSimulationStateProvider(state);
         var pointResolver = new FakeUnsupportedPointResolver();
 
         var service = new BacnetValueReadService(stateProvider, pointResolver);
@@ -117,31 +118,34 @@ public class BacnetValueReadServiceTests
         Assert.NotNull(result.ErrorMessage);
     }
 
-    private static SimulationSnapshot CreateSnapshot()
+    private static SimulationStateDto CreateState()
     {
-        return new SimulationSnapshot
+        return new SimulationStateDto
         {
-            Time = 10,
-            RoomTemperature = 21.5,
+            RoomName = "Office A",
+            IndoorTemperature = 21.5,
+            OutdoorTemperature = 12.0,
             Setpoint = 22.0,
-            ControllerOutput = 55.0,
-            ControlError = 0.5,
-            HeatingPowerKW = 3.2
+            HeaterOutput = 55.0,
+            HeaterEnabled = true,
+            ControllerType = "PID",
+            CurrentStep = 10,
+            SimulatedMinutes = 10.0
         };
     }
 
     private sealed class FakeSimulationStateProvider : ISimulationStateProvider
     {
-        private readonly SimulationSnapshot _snapshot;
+        private readonly SimulationStateDto _state;
 
-        public FakeSimulationStateProvider(SimulationSnapshot snapshot)
+        public FakeSimulationStateProvider(SimulationStateDto state)
         {
-            _snapshot = snapshot;
+            _state = state;
         }
 
-        public SimulationSnapshot GetCurrentSnapshot()
+        public SimulationStateDto GetCurrentState()
         {
-            return _snapshot;
+            return _state;
         }
     }
 

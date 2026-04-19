@@ -1,4 +1,10 @@
-﻿namespace SimulatorSA.Application.Services;
+﻿/* Mudanca para a arquitetura
+    separar:
+        tempo real da máquina
+        tempo simulado do ambiente
+*/
+
+namespace SimulatorSA.Application.Services;
 
 using SimulatorSA.Application.DTOs;
 using SimulatorSA.Application.Interfaces;

@@ -7,6 +7,6 @@
   </Folder>
   <Project Path="SimulatorSA.Application/SimulatorSA.Application.csproj" />
   <Project Path="SimulatorSA.Bacnet/SimulatorSA.Bacnet.csproj" />
-  <Project Path="SimulatorSA.Console/SimulatorSA.Console.csproj" />
+  <Project Path="SimulatorSA.ConsoleApp/SimulatorSA.ConsoleApp.csproj" />
   <Project Path="SimulatorSA.Tests/SimulatorSA.Tests.csproj" />
 </Solution>

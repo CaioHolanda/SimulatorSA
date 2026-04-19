@@ -1,4 +1,5 @@
-﻿// Responsavel por transformar o estado atual em uma amostra de tendencia
+﻿// Mecanismo de coleta
+// Responsavel por transformar o estado atual em uma amostra de tendencia
 
 namespace SimulatorSA.Application.Interfaces;
 
