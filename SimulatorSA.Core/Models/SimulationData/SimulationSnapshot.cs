@@ -1,10 +1,11 @@
-﻿using System.Collections.Generic;
-
-namespace SimulatorSA.Core.Models.SimulationData;
+﻿namespace SimulatorSA.Core.Models.SimulationData;
 
 public class SimulationSnapshot
 {
     public double Time { get; set; }
+    public int SequenceNumber { get; set; }
+    public double SimulatedMinutes { get; set; }
+    public DateTime ProducedAtUtc { get; set; }
 
     public double RoomTemperature { get; set; }
     public double Setpoint { get; set; }
