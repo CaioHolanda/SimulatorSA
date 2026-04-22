@@ -1,4 +1,11 @@
-﻿using SimulatorSA.Application.Interfaces;
+﻿/*
+capacidade fixa
+descarte automático do mais antigo
+comportamento previsível
+implementação simples
+ */
+
+using SimulatorSA.Application.Interfaces;
 using SimulatorSA.Core.Models.SimulationData;
 
 namespace SimulatorSA.Application.Services;

@@ -1,4 +1,12 @@
-﻿using SimulatorSA.Core.Models.SimulationData;
+﻿/*
+    guardar últimos N snapshots
+    consultar o mais recente
+    consultar por sequência
+    consultar faixa
+    permitir verificar capacidade e contagem
+ */
+
+using SimulatorSA.Core.Models.SimulationData;
 
 namespace SimulatorSA.Application.Interfaces;
 

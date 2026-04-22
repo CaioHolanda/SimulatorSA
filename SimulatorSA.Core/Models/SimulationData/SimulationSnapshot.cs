@@ -2,6 +2,7 @@
 
 public class SimulationSnapshot
 {
+    // Time esta temporario - deve ser eliminado
     public double Time { get; set; }
     public int SequenceNumber { get; set; }
     public double SimulatedMinutes { get; set; }
