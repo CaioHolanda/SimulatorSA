@@ -3,7 +3,6 @@ using SimulatorSA.Core.Constants;
 using SimulatorSA.Core.Interfaces;
 using SimulatorSA.Core.Models;
 using SimulatorSA.Core.Models.SimulationData;
-using SimulatorSA.Core.Spaces;
 
 namespace SimulatorSA.Core.Services
 {
@@ -31,8 +30,6 @@ namespace SimulatorSA.Core.Services
 
             if (deltaTimeMinutes <= 0)
                 throw new ArgumentOutOfRangeException(nameof(deltaTimeMinutes), "Delta time must be greater than zero.");
-
-            controller.Reset();
 
             var result = new SimulationResult();
 
@@ -67,52 +64,26 @@ namespace SimulatorSA.Core.Services
             result.Series.Add(heatingPowerSeries);
             result.Series.Add(setpointSeries);
 
+            var engine = new SimulationEngine(
+                room,
+                controller,
+                actuator,
+                outdoorTemperature,
+                maxHeatingPowerKW,
+                deltaTimeMinutes,
+                stepAction);
+
             for (int step = 0; step < totalSteps; step++)
             {
-                double time = step * deltaTimeMinutes;
-
-                stepAction?.Invoke(room, step, time);
-
-                double controllerOutput = controller.CalculateOutput(room.ActualTemperature, deltaTimeMinutes);
-
-                actuator.SetOutput(controllerOutput);
-
-                double heatingPowerKW = actuator.GetThermalPowerKW(maxHeatingPowerKW);
-
-                room.ApplyThermalPower(heatingPowerKW, deltaTimeMinutes);
-
-                if (room is OfficeA office)
-                {
-                    office.ApplyInternalPerturbations(deltaTimeMinutes);
-                }
-
-                room.ApplyEnvelopeHeatExchange(outdoorTemperature, deltaTimeMinutes);
-
-                double error = controller.Setpoint - room.ActualTemperature;
-
-                var snapshot = new SimulationSnapshot
-                {
-                    Time = time,
-                    RoomTemperature = room.ActualTemperature,
-                    Setpoint = controller.Setpoint,
-                    ControllerOutput = actuator.OutputPercentage,
-                    ControlError = error,
-                    HeatingPowerKW = heatingPowerKW
-                };
-
-                snapshot.Values[SimulationVariables.Temperature] = room.ActualTemperature;
-                snapshot.Values[SimulationVariables.Error] = error;
-                snapshot.Values[SimulationVariables.ValveOpening] = actuator.OutputPercentage;
-                snapshot.Values[SimulationVariables.HeatingEffect] = heatingPowerKW;
-                snapshot.Values[SimulationVariables.Setpoint] = controller.Setpoint;
+                var snapshot = engine.Step();
 
                 result.Snapshots.Add(snapshot);
 
-                AddPoint(temperatureSeries, time, room.ActualTemperature);
-                AddPoint(errorSeries, time, error);
-                AddPoint(actuatorSeries, time, actuator.OutputPercentage);
-                AddPoint(heatingPowerSeries, time, heatingPowerKW);
-                AddPoint(setpointSeries, time, controller.Setpoint);
+                AddPoint(temperatureSeries, snapshot.SimulatedMinutes, snapshot.RoomTemperature);
+                AddPoint(errorSeries, snapshot.SimulatedMinutes, snapshot.ControlError);
+                AddPoint(actuatorSeries, snapshot.SimulatedMinutes, snapshot.ControllerOutput);
+                AddPoint(heatingPowerSeries, snapshot.SimulatedMinutes, snapshot.HeatingPowerKW);
+                AddPoint(setpointSeries, snapshot.SimulatedMinutes, snapshot.Setpoint);
             }
 
             return result;

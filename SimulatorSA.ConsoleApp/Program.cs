@@ -1,7 +1,10 @@
-﻿using SimulatorSA.Application.Scenarios;
+﻿using SimulatorSA.Application.DTOs;
+using SimulatorSA.Application.Interfaces;
 using SimulatorSA.Application.Services;
-using SimulatorSA.ConsoleApp.Output;
-using SimulatorSA.ConsoleApp.Runtime;
+using SimulatorSA.Core.Actuators;
+using SimulatorSA.Core.Models;
+using SimulatorSA.Core.Models.SimulationData;
+using SimulatorSA.Core.Services;
 
 namespace SimulatorSA.ConsoleApp;
 
@@ -9,103 +12,351 @@ public class Program
 {
     public static void Main()
     {
-        var scenario = new PidScenarioDefinition();
-        var runner = new SimulationScenarioRunner();
+        RunTrendCollectionDemo();
+    }
+    private static void RunTrendCollectionDemo()
+    {
+        Console.WriteLine("=== Trend Collection Demo ===");
+        Console.WriteLine();
 
-        var result = runner.RunPidScenario(scenario);
+        var room = new Room(
+            name: "Room A",
+            initialTemperature: 18.0,
+            heatLossCoefficientKWPerDegree: 0.08,
+            thermalCapacityKWhPerDegree: 2.5);
 
-        ResultPrinter.Print(result);
+        var controller = new PidController(
+            setpoint: 22.0,
+            proportionalGain: 8.0,
+            integralGain: 0.15,
+            derivativeGain: 2.0);
+
+        var actuator = new ThermalActuator("Heating Coil");
+
+        var engine = new SimulationEngine(
+            room,
+            controller,
+            actuator,
+            outdoorTemperature: 10.0,
+            maxHeatingPowerKW: 5.0,
+            deltaTimeMinutes: 1.0);
+
+        ICurrentSimulationStateStore currentStateStore = new CurrentSimulationStateStore();
+        ISnapshotBuffer snapshotBuffer = new CircularSnapshotBuffer(capacity: 5);
+        ITrendHistoryService trendHistoryService = new TrendHistoryService();
+
+        IPollingCoordinator pollingCoordinator = new PollingCoordinator(
+            currentStateStore,
+            snapshotBuffer,
+            pollingIntervalMinutes: 5,
+            outdoorTemperature: 10.0);
+
+        ITrendCollectionService trendCollectionService = new TrendCollectionService(
+            pollingCoordinator,
+            trendHistoryService);
+
+        Console.WriteLine("---- Phase 1: Initial collection (seq 0) ----");
+        AdvanceSimulation(engine, currentStateStore, snapshotBuffer, steps: 1);
+        var result0 = trendCollectionService.CollectAndStore();
+        PrintCollectionResult(result0, trendHistoryService);
 
         Console.WriteLine();
-        Console.WriteLine("=== Supervisory Replay Demo ===");
+        Console.WriteLine("---- Phase 2: Recovery from buffer (expected seq 5, current seq 7) ----");
+        AdvanceSimulation(engine, currentStateStore, snapshotBuffer, steps: 7);
+        var resultRecovery = trendCollectionService.CollectAndStore();
+        PrintCollectionResult(resultRecovery, trendHistoryService);
 
-        var stateProvider = new ReplaySimulationStateProvider();
-        var supervisoryService = new SupervisoryStateService(stateProvider);
-        var pollingService = new HmiPollingService(supervisoryService);
-        var trendService = new TrendHistoryService(maxSamples: 20);
+        Console.WriteLine();
+        Console.WriteLine("---- Phase 3: Gap detection (expected seq 10, current seq 15, buffer lost seq 10) ----");
+        AdvanceSimulation(engine, currentStateStore, snapshotBuffer, steps: 8);
+        var resultGap = trendCollectionService.CollectAndStore();
+        PrintCollectionResult(resultGap, trendHistoryService);
 
-        const int pollingIntervalMinutes = 5;
-        const int trendingIntervalMinutes = 10;
-
-        int pollingReads = 0;
-        int trendSamples = 0;
-
-        foreach (var snapshot in result.Snapshots)
+        Console.WriteLine();
+        Console.WriteLine("=== Final Buffer State ===");
+        foreach (var snapshot in snapshotBuffer.GetAll())
         {
-            stateProvider.UpdateFromSnapshot(
-                snapshot,
-                roomName: scenario.RoomName,
-                outdoorTemperature: scenario.OutdoorTemperature,
-                controllerType: "PID");
+            Console.WriteLine(
+                $"seq={snapshot.SequenceNumber,2} | " +
+                $"sim={snapshot.SimulatedMinutes,4:0} min | " +
+                $"temp={snapshot.RoomTemperature:F2} °C | " +
+                $"heat={snapshot.HeatingPowerKW:F2} kW");
+        }
+
+        Console.WriteLine();
+        PrintTrendHistory(trendHistoryService);
+    }
+
+    private static void AdvanceSimulation(
+        SimulationEngine engine,
+        ICurrentSimulationStateStore currentStateStore,
+        ISnapshotBuffer snapshotBuffer,
+        int steps)
+    {
+        for (int i = 0; i < steps; i++)
+        {
+            var snapshot = engine.Step();
+
+            currentStateStore.Update(snapshot);
+            snapshotBuffer.Add(snapshot);
 
             Console.WriteLine(
-                $"[BUFFER] t={snapshot.Time,4:0} min | " +
+                $"[STEP] seq={snapshot.SequenceNumber,2} | " +
+                $"sim={snapshot.SimulatedMinutes,4:0} min | " +
+                $"temp={snapshot.RoomTemperature:F2} °C | " +
+                $"output={snapshot.ControllerOutput:F1} % | " +
+                $"heat={snapshot.HeatingPowerKW:F2} kW");
+        }
+    }
+
+    private static void PrintCollectionResult(
+        Application.DTOs.PollingResult result,
+        ITrendHistoryService trendHistoryService)
+    {
+        Console.WriteLine();
+        Console.WriteLine($"Has sample            : {result.HasSample}");
+        Console.WriteLine($"Recovered from buffer : {result.RecoveredFromBuffer}");
+        Console.WriteLine($"Gap detected          : {result.GapDetected}");
+        Console.WriteLine($"Expected sequence     : {result.ExpectedSequenceNumber}");
+        Console.WriteLine($"Actual sequence       : {(result.ActualSequenceNumber?.ToString() ?? "null")}");
+        Console.WriteLine($"Status                : {result.Status}");
+
+        if (result.Sample is not null)
+        {
+            Console.WriteLine(
+                $"Stored sample         : seq={result.Sample.SequenceNumber}, " +
+                $"sim={result.Sample.SimulatedMinutes:0} min, " +
+                $"temp={result.Sample.IndoorTemperature:F2} °C, " +
+                $"heat={result.Sample.HeaterOutput:F2} kW, " +
+                $"timestamp={result.Sample.Timestamp:HH:mm:ss}");
+        }
+
+        Console.WriteLine($"Trend sample count    : {trendHistoryService.GetSamples().Count}");
+    }
+
+    private static void PrintTrendHistory(ITrendHistoryService trendHistoryService)
+    {
+        var samples = trendHistoryService.GetSamples();
+
+        Console.WriteLine("=== Final Trend History ===");
+
+        if (samples.Count == 0)
+        {
+            Console.WriteLine("No samples stored.");
+            return;
+        }
+
+        foreach (var sample in samples)
+        {
+            Console.WriteLine(
+                $"seq={sample.SequenceNumber,2} | " +
+                $"sim={sample.SimulatedMinutes,4:0} min | " +
+                $"temp={sample.IndoorTemperature:F2} °C | " +
+                $"outdoor={sample.OutdoorTemperature:F2} °C | " +
+                $"setpoint={sample.Setpoint:F2} °C | " +
+                $"heat={sample.HeaterOutput:F2} kW | " +
+                $"timestamp={sample.Timestamp:HH:mm:ss}");
+        }
+    }
+    private static void RunLiveBufferDemo()
+    {
+        var room = new Room(
+            name: "Room A",
+            initialTemperature: 18.0,
+            heatLossCoefficientKWPerDegree: 0.08,
+            thermalCapacityKWhPerDegree: 2.5);
+
+        var controller = new PidController(
+            setpoint: 22.0,
+            proportionalGain: 8.0,
+            integralGain: 0.15,
+            derivativeGain: 2.0);
+
+        var actuator = new ThermalActuator("Heating Coil");
+
+        var engine = new SimulationEngine(
+            room,
+            controller,
+            actuator,
+            outdoorTemperature: 10.0,
+            maxHeatingPowerKW: 5.0,
+            deltaTimeMinutes: 1.0);
+
+        ISnapshotBuffer buffer = new CircularSnapshotBuffer(capacity: 5);
+
+        Console.WriteLine("=== Live Simulation Buffer Demo ===");
+        Console.WriteLine();
+
+        for (int i = 0; i < 12; i++)
+        {
+            var snapshot = engine.Step();
+            buffer.Add(snapshot);
+
+            Console.WriteLine(
+                $"[STEP] seq={snapshot.SequenceNumber,2} | " +
+                $"sim={snapshot.SimulatedMinutes,4:0} min | " +
                 $"Temp={snapshot.RoomTemperature,5:F2} °C | " +
-                $"Setpoint={snapshot.Setpoint,5:F2} °C | " +
                 $"Output={snapshot.ControllerOutput,6:F1} % | " +
                 $"Heat={snapshot.HeatingPowerKW,5:F2} kW");
-
-            if (((int)snapshot.Time) % pollingIntervalMinutes == 0)
-            {
-                var polled = pollingService.CollectSample();
-                pollingReads++;
-
-                Console.WriteLine(
-                    $"  [POLL ] real={polled.Timestamp:HH:mm:ss} | " +
-                    $"sim={snapshot.Time,4:0} min | " +
-                    $"Indoor={polled.IndoorTemperature,5:F2} °C | " +
-                    $"Outdoor={polled.OutdoorTemperature,5:F2} °C | " +
-                    $"Setpoint={polled.Setpoint,5:F2} °C | " +
-                    $"Heat={polled.HeaterOutput,5:F2} kW | " +
-                    $"Enabled={polled.HeaterEnabled}");
-            }
-
-            if (((int)snapshot.Time) % trendingIntervalMinutes == 0)
-            {
-                var sample = pollingService.CollectSample();
-                trendService.AddSample(sample);
-                trendSamples++;
-
-                Console.WriteLine(
-                    $"  [TREND] stored sample #{trendSamples} at sim={snapshot.Time,4:0} min");
-            }
         }
 
         Console.WriteLine();
-        Console.WriteLine("=== Replay Summary ===");
-        Console.WriteLine($"Simulation snapshots : {result.Snapshots.Count}");
-        Console.WriteLine($"Polling reads        : {pollingReads}");
-        Console.WriteLine($"Trend samples stored : {trendSamples}");
+        Console.WriteLine("=== Buffer State ===");
+        Console.WriteLine($"Capacity         : {buffer.Capacity}");
+        Console.WriteLine($"Stored snapshots : {buffer.Count}");
 
-        var storedSamples = trendService.GetSamples();
+        var allSnapshots = buffer.GetAll();
 
-        if (storedSamples.Count > 0)
+        Console.WriteLine();
+        Console.WriteLine("Snapshots currently retained:");
+        foreach (var snapshot in allSnapshots)
         {
-            var last = storedSamples.Last();
-
             Console.WriteLine(
-                $"Last trend sample    : real={last.Timestamp:HH:mm:ss}, " +
-                $"Indoor={last.IndoorTemperature:F2} °C, " +
-                $"Outdoor={last.OutdoorTemperature:F2} °C, " +
-                $"Setpoint={last.Setpoint:F2} °C, " +
-                $"Heat={last.HeaterOutput:F2} kW");
+                $"seq={snapshot.SequenceNumber,2} | sim={snapshot.SimulatedMinutes,4:0} min | Temp={snapshot.RoomTemperature:F2} °C");
+        }
+
+        var oldest = allSnapshots.FirstOrDefault();
+        var latest = buffer.GetLatest();
+
+        Console.WriteLine();
+        Console.WriteLine("=== Buffer Validation ===");
+
+        if (oldest is not null)
+            Console.WriteLine($"Oldest retained seq : {oldest.SequenceNumber}");
+
+        if (latest is not null)
+            Console.WriteLine($"Latest retained seq : {latest.SequenceNumber}");
+
+        int expectedOldest = 7;
+        int expectedLatest = 11;
+
+        Console.WriteLine($"Expected oldest seq : {expectedOldest}");
+        Console.WriteLine($"Expected latest seq : {expectedLatest}");
+
+        bool sizeOk = buffer.Count == 5;
+        bool oldestOk = oldest?.SequenceNumber == expectedOldest;
+        bool latestOk = latest?.SequenceNumber == expectedLatest;
+
+        Console.WriteLine($"Capacity respected  : {(sizeOk ? "YES" : "NO")}");
+        Console.WriteLine($"Discard worked      : {(oldestOk && latestOk ? "YES" : "NO")}");
+    }
+    private static void RunPollingRecoveryDemo()
+    {
+        Console.WriteLine("=== Polling Recovery Demo ===");
+
+        ICurrentSimulationStateStore currentStateStore = new CurrentSimulationStateStore();
+        ISnapshotBuffer snapshotBuffer = new CircularSnapshotBuffer(10);
+
+        var polling = new PollingCoordinator(
+            currentStateStore,
+            snapshotBuffer,
+            pollingIntervalMinutes: 5,
+            outdoorTemperature: 10.0);
+
+        // First sample at seq 0
+        var snapshot0 = CreateSnapshot(0);
+        currentStateStore.Update(snapshot0);
+        snapshotBuffer.Add(snapshot0);
+
+        var first = polling.TryCollect();
+
+        PrintPollingResult("Initial collection", first);
+
+        // Advance simulation to seq 7
+        for (int seq = 1; seq <= 7; seq++)
+        {
+            var snapshot = CreateSnapshot(seq);
+            currentStateStore.Update(snapshot);
+            snapshotBuffer.Add(snapshot);
+        }
+
+        var recovery = polling.TryCollect();
+
+        PrintPollingResult("Recovery attempt", recovery);
+
+        Console.WriteLine("Buffer content:");
+        foreach (var snapshot in snapshotBuffer.GetAll())
+        {
+            Console.WriteLine(
+                $"  seq={snapshot.SequenceNumber,2} | sim={snapshot.SimulatedMinutes,4:0} min | Temp={snapshot.RoomTemperature:F2} °C");
+        }
+    }
+    private static void RunPollingGapDemo()
+    {
+        Console.WriteLine("=== Polling Gap Demo ===");
+
+        ICurrentSimulationStateStore currentStateStore = new CurrentSimulationStateStore();
+        ISnapshotBuffer snapshotBuffer = new CircularSnapshotBuffer(3);
+
+        var polling = new PollingCoordinator(
+            currentStateStore,
+            snapshotBuffer,
+            pollingIntervalMinutes: 5,
+            outdoorTemperature: 10.0);
+
+        // First sample at seq 0
+        var snapshot0 = CreateSnapshot(0);
+        currentStateStore.Update(snapshot0);
+        snapshotBuffer.Add(snapshot0);
+
+        var first = polling.TryCollect();
+
+        PrintPollingResult("Initial collection", first);
+
+        // Advance directly to seq 7, 8, 9 so seq 5 is no longer available
+        for (int seq = 7; seq <= 9; seq++)
+        {
+            var snapshot = CreateSnapshot(seq);
+            currentStateStore.Update(snapshot);
+            snapshotBuffer.Add(snapshot);
+        }
+
+        var gap = polling.TryCollect();
+
+        PrintPollingResult("Gap attempt", gap);
+
+        Console.WriteLine("Buffer content:");
+        foreach (var snapshot in snapshotBuffer.GetAll())
+        {
+            Console.WriteLine(
+                $"  seq={snapshot.SequenceNumber,2} | sim={snapshot.SimulatedMinutes,4:0} min | Temp={snapshot.RoomTemperature:F2} °C");
+        }
+    }
+    private static void PrintPollingResult(string title, PollingResult result)
+    {
+        Console.WriteLine($"-- {title} --");
+        Console.WriteLine($"Has sample            : {result.HasSample}");
+        Console.WriteLine($"Recovered from buffer : {result.RecoveredFromBuffer}");
+        Console.WriteLine($"Gap detected          : {result.GapDetected}");
+        Console.WriteLine($"Expected sequence     : {result.ExpectedSequenceNumber}");
+        Console.WriteLine($"Actual sequence       : {(result.ActualSequenceNumber?.ToString() ?? "null")}");
+        Console.WriteLine($"Status                : {result.Status}");
+
+        if (result.Sample is not null)
+        {
+            Console.WriteLine(
+                $"Sample => seq={result.Sample.SequenceNumber}, " +
+                $"sim={result.Sample.SimulatedMinutes:0} min, " +
+                $"temp={result.Sample.IndoorTemperature:F2} °C, " +
+                $"heat={result.Sample.HeaterOutput:F2} kW, " +
+                $"timestamp={result.Sample.Timestamp:HH:mm:ss}");
         }
 
         Console.WriteLine();
-        Console.WriteLine("=== Trend History ===");
+    }
 
-        int index = 1;
-        foreach (var sample in storedSamples)
+    private static SimulationSnapshot CreateSnapshot(int sequenceNumber)
+    {
+        return new SimulationSnapshot
         {
-            Console.WriteLine(
-                $"[{index:00}] real={sample.Timestamp:HH:mm:ss} | " +
-                $"Indoor={sample.IndoorTemperature,5:F2} °C | " +
-                $"Outdoor={sample.OutdoorTemperature,5:F2} °C | " +
-                $"Setpoint={sample.Setpoint,5:F2} °C | " +
-                $"Heat={sample.HeaterOutput,5:F2} kW | " +
-                $"Enabled={sample.HeaterEnabled}");
-
-            index++;
-        }
+            SequenceNumber = sequenceNumber,
+            SimulatedMinutes = sequenceNumber,
+            ProducedAtUtc = DateTime.UtcNow,
+            RoomTemperature = 18.0 + sequenceNumber * 0.1,
+            Setpoint = 22.0,
+            ControllerOutput = 50.0,
+            ControlError = 22.0 - (18.0 + sequenceNumber * 0.1),
+            HeatingPowerKW = 2.0
+        };
     }
 }

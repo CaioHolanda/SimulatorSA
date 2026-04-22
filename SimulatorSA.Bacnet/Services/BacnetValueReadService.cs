@@ -1,13 +1,4 @@
-﻿/*
-Papel do BacnetValueReadService
-
-    receber um pedido de leitura;
-    localizar o ponto BACnet correspondente;
-    obter o estado atual da simulacao;
-    extrair do estado o valor correto;
-    devolver isso dentro de um BacnetOperationResult.
- */
-using SimulatorSA.Application.DTOs;
+﻿using SimulatorSA.Application.DTOs;
 using SimulatorSA.Application.Interfaces;
 using SimulatorSA.Bacnet.Mapping;
 using SimulatorSA.Bacnet.Models;
@@ -56,13 +47,20 @@ public class BacnetValueReadService : IBacnetValueReadService
 
         return ReadFromState(point.PointKey, state);
     }
+
     private static BacnetOperationResult ReadFromState(string pointKey, SimulationStateDto state)
     {
         return pointKey switch
         {
             "room.temperature" => BacnetOperationResult.Ok(state.IndoorTemperature),
+            "room.outdoor_temperature" => BacnetOperationResult.Ok(state.OutdoorTemperature),
             "room.setpoint" => BacnetOperationResult.Ok(state.Setpoint),
+            "room.error" => BacnetOperationResult.Ok(state.Setpoint - state.IndoorTemperature),
+            "heating.power" => BacnetOperationResult.Ok(state.HeaterOutput),
+
+            // Compatibilidade temporária
             "controller.output" => BacnetOperationResult.Ok(state.HeaterOutput),
+
             _ => BacnetOperationResult.Fail(
                 "unsupported_point",
                 $"Point key '{pointKey}' is not supported by the read service.")

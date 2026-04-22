@@ -7,6 +7,7 @@ public class TrendHistoryService : ITrendHistoryService
 {
     private readonly int _maxSamples;
     private readonly Queue<TrendSampleDto> _samples;
+    public int Count => _samples.Count;
 
     public TrendHistoryService(int maxSamples = 720)
     {

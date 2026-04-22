@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-namespace SimulatorSA.Bacnet.Mapping;
+﻿namespace SimulatorSA.Bacnet.Mapping;
 
 public static class BacnetObjectCatalog
 {
@@ -17,25 +14,17 @@ public static class BacnetObjectCatalog
         },
         new BacnetPointMap
         {
-            PointKey = "room.setpoint",
-            ObjectType = BacnetObjectKind.AnalogValue,
-            Instance = 1,
-            ObjectName = "Room Setpoint",
-            IsWritable = true
-        },
-        new BacnetPointMap
-        {
-            PointKey = "controller.output",
-            ObjectType = BacnetObjectKind.AnalogOutput,
-            Instance = 1,
-            ObjectName = "Controller Output",
+            PointKey = "room.outdoor_temperature",
+            ObjectType = BacnetObjectKind.AnalogInput,
+            Instance = 2,
+            ObjectName = "Outdoor Temperature",
             IsWritable = false
         },
         new BacnetPointMap
         {
             PointKey = "room.error",
             ObjectType = BacnetObjectKind.AnalogInput,
-            Instance = 2,
+            Instance = 3,
             ObjectName = "Control Error",
             IsWritable = false
         },
@@ -43,8 +32,26 @@ public static class BacnetObjectCatalog
         {
             PointKey = "heating.power",
             ObjectType = BacnetObjectKind.AnalogInput,
-            Instance = 3,
+            Instance = 4,
             ObjectName = "Heating Power",
+            IsWritable = false
+        },
+        new BacnetPointMap
+        {
+            PointKey = "room.setpoint",
+            ObjectType = BacnetObjectKind.AnalogValue,
+            Instance = 1,
+            ObjectName = "Room Setpoint",
+            IsWritable = true
+        },
+
+        // Compatibilidade temporária; remover depois se não for expor percentual real
+        new BacnetPointMap
+        {
+            PointKey = "controller.output",
+            ObjectType = BacnetObjectKind.AnalogOutput,
+            Instance = 1,
+            ObjectName = "Controller Output",
             IsWritable = false
         }
     ];
