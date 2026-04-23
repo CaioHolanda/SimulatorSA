@@ -29,7 +29,9 @@ public class BacnetValueReadService : IBacnetValueReadService
                 $"No BACnet point was found for object type '{objectType}' and instance '{instance}'.");
         }
 
-        return ReadPresentValue(point.PointKey);
+        var state = _simulationStateProvider.GetCurrentState();
+
+        return ReadFromState(point.PointKey, state);
     }
 
     public BacnetOperationResult ReadPresentValue(string pointKey)

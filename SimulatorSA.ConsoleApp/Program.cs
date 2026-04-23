@@ -1,10 +1,14 @@
 ﻿using SimulatorSA.Application.DTOs;
 using SimulatorSA.Application.Interfaces;
 using SimulatorSA.Application.Services;
+using SimulatorSA.Bacnet.Configuration;
+using SimulatorSA.Bacnet.Mapping;
+using SimulatorSA.Bacnet.Services;
 using SimulatorSA.Core.Actuators;
 using SimulatorSA.Core.Models;
 using SimulatorSA.Core.Models.SimulationData;
 using SimulatorSA.Core.Services;
+
 
 namespace SimulatorSA.ConsoleApp;
 
@@ -12,8 +16,222 @@ public class Program
 {
     public static void Main()
     {
-        RunTrendCollectionDemo();
+        Console.WriteLine("=== BACnet Server Demo ===");
+
+        //
+        // 1. Estado fake (temporário)
+        //
+        var simulationState = new SimulatorSA.Application.DTOs.SimulationStateDto
+        {
+            RoomName = "Office A",
+            IndoorTemperature = 21.0,
+            OutdoorTemperature = 10.0,
+            Setpoint = 22.0,
+            HeaterOutput = 50.0,
+            HeaterEnabled = true,
+            ControllerType = "PID",
+            CurrentStep = 0,
+            SimulatedMinutes = 0
+        };
+
+        ISimulationStateProvider stateProvider =
+            new FakeSimulationStateProvider(simulationState);
+
+        //
+        // 2. Resolver BACnet
+        //
+        IBacnetPointResolver pointResolver = new BacnetPointResolver();
+
+        //
+        // 3. Serviço de leitura BACnet
+        //
+        IBacnetValueReadService readService =
+            new BacnetValueReadService(stateProvider, pointResolver);
+
+        //
+        // 4. Configuração do device
+        //
+        var config = new BacnetDeviceConfiguration
+        {
+            DeviceInstance = 1001,
+            DeviceName = "SimulatorSA Controller",
+            VendorId = 999
+        };
+
+        //
+        // 5. Servidor BACnet
+        //
+        var server = new BacnetServerService(config, readService);
+
+        server.Start();
+
+        Console.WriteLine("Press ENTER to stop...");
+        Console.ReadLine();
+
+        server.Stop();
+ 
     }
+    class FakeSimulationStateProvider : ISimulationStateProvider
+    {
+        private readonly SimulationStateDto _state;
+
+        public FakeSimulationStateProvider(SimulationStateDto state)
+        {
+            _state = state;
+        }
+
+        public SimulationStateDto GetCurrentState()
+        {
+            return _state;
+        }
+    }
+    #region Integration Tests 
+    private static void RunBacnetReadDemo()
+    {
+        Console.WriteLine("=== BACnet Read Demo ===");
+        Console.WriteLine();
+
+        double outdoorTemperature = 10.0;
+
+        var room = new Room(
+            name: "Room A",
+            initialTemperature: 18.0,
+            heatLossCoefficientKWPerDegree: 0.08,
+            thermalCapacityKWhPerDegree: 2.5);
+
+        var controller = new PidController(
+            setpoint: 22.0,
+            proportionalGain: 8.0,
+            integralGain: 0.15,
+            derivativeGain: 2.0);
+
+        var actuator = new ThermalActuator("Heating Coil");
+
+        var engine = new SimulationEngine(
+            room,
+            controller,
+            actuator,
+            outdoorTemperature: outdoorTemperature,
+            maxHeatingPowerKW: 5.0,
+            deltaTimeMinutes: 1.0);
+
+        ICurrentSimulationStateStore currentStateStore = new CurrentSimulationStateStore();
+
+        // Avança alguns passos da simulação para gerar um estado atual real
+        Console.WriteLine("Advancing simulation...");
+        for (int i = 0; i < 6; i++)
+        {
+            var snapshot = engine.Step();
+            currentStateStore.Update(snapshot);
+
+            Console.WriteLine(
+                $"[STEP] seq={snapshot.SequenceNumber,2} | " +
+                $"sim={snapshot.SimulatedMinutes,4:0} min | " +
+                $"temp={snapshot.RoomTemperature:F2} °C | " +
+                $"heat={snapshot.HeatingPowerKW:F2} kW");
+        }
+
+        Console.WriteLine();
+
+        ISimulationStateProvider stateProvider = new CurrentStateSimulationStateProvider(
+            currentStateStore,
+            roomName: "Room A",
+            controllerType: "PID",
+            outdoorTemperatureProvider: () => outdoorTemperature);
+
+        IBacnetPointResolver pointResolver = new BacnetPointResolver();
+
+        var readService = new BacnetValueReadService(stateProvider, pointResolver);
+
+        Console.WriteLine("Reading BACnet points by object type and instance...");
+        Console.WriteLine();
+
+        PrintRead(readService, BacnetObjectKind.AnalogInput, 1); // room.temperature
+        PrintRead(readService, BacnetObjectKind.AnalogInput, 2); // room.outdoor_temperature
+        PrintRead(readService, BacnetObjectKind.AnalogInput, 3); // room.error
+        PrintRead(readService, BacnetObjectKind.AnalogInput, 4); // heating.power
+        PrintRead(readService, BacnetObjectKind.AnalogValue, 1); // room.setpoint
+
+        Console.WriteLine();
+        Console.WriteLine("Reading BACnet points by point key...");
+        Console.WriteLine();
+
+        PrintRead(readService, "room.temperature");
+        PrintRead(readService, "room.outdoor_temperature");
+        PrintRead(readService, "room.error");
+        PrintRead(readService, "heating.power");
+        PrintRead(readService, "room.setpoint");
+        Console.WriteLine();
+
+    }
+
+    private static void PrintRead(BacnetValueReadService readService, BacnetObjectKind objectType, uint instance)
+    {
+        var result = readService.ReadPresentValue(objectType, instance);
+
+        var point = BacnetObjectCatalog.All.FirstOrDefault(p =>
+            p.ObjectType == objectType &&
+            p.Instance == instance);
+
+        string label = point is null
+            ? $"{GetObjectTypePrefix(objectType)}-{instance}"
+            : $"{GetObjectTypePrefix(objectType)}-{instance} {point.ObjectName}";
+
+        if (result.Success)
+        {
+            Console.WriteLine($"{label,-32} => {FormatValue(result.Value)}");
+        }
+        else
+        {
+            Console.WriteLine($"{label,-32} => ERROR [{result.ErrorCode}] {result.ErrorMessage}");
+        }
+    }
+
+    private static void PrintRead(BacnetValueReadService readService, string pointKey)
+    {
+        var result = readService.ReadPresentValue(pointKey);
+
+        var point = BacnetObjectCatalog.All.FirstOrDefault(p =>
+            string.Equals(p.PointKey, pointKey, StringComparison.OrdinalIgnoreCase));
+
+        string label = point is null
+            ? pointKey
+            : $"{pointKey} ({point.ObjectName})";
+
+        if (result.Success)
+        {
+            Console.WriteLine($"{label,-40} => {FormatValue(result.Value)}");
+        }
+        else
+        {
+            Console.WriteLine($"{label,-40} => ERROR [{result.ErrorCode}] {result.ErrorMessage}");
+        }
+    }
+
+    private static string GetObjectTypePrefix(BacnetObjectKind objectType)
+    {
+        return objectType switch
+        {
+            BacnetObjectKind.AnalogInput => "AI",
+            BacnetObjectKind.AnalogOutput => "AO",
+            BacnetObjectKind.AnalogValue => "AV",
+            _ => objectType.ToString()
+        };
+    }
+
+    private static string FormatValue(object? value)
+    {
+        return value switch
+        {
+            double d => d.ToString("F2"),
+            float f => f.ToString("F2"),
+            decimal m => m.ToString("F2"),
+            _ => value?.ToString() ?? "null"
+        };
+    }
+
+    //=======================================================================
+
     private static void RunTrendCollectionDemo()
     {
         Console.WriteLine("=== Trend Collection Demo ===");
@@ -86,7 +304,6 @@ public class Program
         Console.WriteLine();
         PrintTrendHistory(trendHistoryService);
     }
-
     private static void AdvanceSimulation(
         SimulationEngine engine,
         ICurrentSimulationStateStore currentStateStore,
@@ -108,7 +325,6 @@ public class Program
                 $"heat={snapshot.HeatingPowerKW:F2} kW");
         }
     }
-
     private static void PrintCollectionResult(
         Application.DTOs.PollingResult result,
         ITrendHistoryService trendHistoryService)
@@ -130,10 +346,8 @@ public class Program
                 $"heat={result.Sample.HeaterOutput:F2} kW, " +
                 $"timestamp={result.Sample.Timestamp:HH:mm:ss}");
         }
-
         Console.WriteLine($"Trend sample count    : {trendHistoryService.GetSamples().Count}");
     }
-
     private static void PrintTrendHistory(ITrendHistoryService trendHistoryService)
     {
         var samples = trendHistoryService.GetSamples();
@@ -344,7 +558,6 @@ public class Program
 
         Console.WriteLine();
     }
-
     private static SimulationSnapshot CreateSnapshot(int sequenceNumber)
     {
         return new SimulationSnapshot
@@ -359,4 +572,5 @@ public class Program
             HeatingPowerKW = 2.0
         };
     }
+    #endregion
 }

@@ -135,13 +135,29 @@ public class OnOffControllerTests
     }
 
     [Fact]
-    public void Reset_ShouldTurnControllerOff()
+    public void Reset_ShouldRestoreInitialState_WhenInitialStateIsTrue()
     {
         // Arrange
         var controller = new OnOffController(
             setpoint: 22,
             hysteresis: 2,
             initialState: true);
+
+        // Act
+        controller.Reset();
+
+        // Assert
+        Assert.True(controller.IsOn);
+    }
+
+    [Fact]
+    public void Reset_ShouldRestoreInitialState_WhenInitialStateIsFalse()
+    {
+        // Arrange
+        var controller = new OnOffController(
+            setpoint: 22,
+            hysteresis: 2,
+            initialState: false);
 
         // Act
         controller.Reset();
