@@ -1,8 +1,11 @@
 ﻿using SimulatorSA.Application.DTOs;
 using SimulatorSA.Application.Interfaces;
+using SimulatorSA.Application.Scenarios;
 using SimulatorSA.Application.Services;
 using SimulatorSA.Bacnet.Configuration;
+using SimulatorSA.Bacnet.Handlers;
 using SimulatorSA.Bacnet.Mapping;
+using SimulatorSA.Bacnet.Responses;
 using SimulatorSA.Bacnet.Services;
 using SimulatorSA.Core.Actuators;
 using SimulatorSA.Core.Models;
@@ -14,76 +17,95 @@ namespace SimulatorSA.ConsoleApp;
 
 public class Program
 {
-    public static void Main()
+    public static async Task Main()
     {
-        Console.WriteLine("=== BACnet Server Demo ===");
-
-        //
-        // 1. Estado fake (temporário)
-        //
-        var simulationState = new SimulatorSA.Application.DTOs.SimulationStateDto
+        // 1. Configuração BACnet
+        var configuration = new BacnetDeviceConfiguration
         {
-            RoomName = "Office A",
-            IndoorTemperature = 21.0,
-            OutdoorTemperature = 10.0,
-            Setpoint = 22.0,
-            HeaterOutput = 50.0,
-            HeaterEnabled = true,
-            ControllerType = "PID",
-            CurrentStep = 0,
-            SimulatedMinutes = 0
+            DeviceInstance = 1234,
+            DeviceName = "SimulatorSA BACnet Device",
+            VendorName = "SimulatorSA",
+            VendorId = 999,
+            UdpPort = 47808
         };
 
-        ISimulationStateProvider stateProvider =
-            new FakeSimulationStateProvider(simulationState);
+        // 2. Estado da simulação
+        var stateStore = new CurrentSimulationStateStore();
+        var snapshotBuffer = new CircularSnapshotBuffer(500);
 
-        //
-        // 2. Resolver BACnet
-        //
-        IBacnetPointResolver pointResolver = new BacnetPointResolver();
+        var stateProvider = new CurrentStateSimulationStateProvider(
+            stateStore,
+            roomName: "Room 1",
+            controllerType: "PID",
+            outdoorTemperatureProvider: () => 10.0
+        );
 
-        //
-        // 3. Serviço de leitura BACnet
-        //
-        IBacnetValueReadService readService =
-            new BacnetValueReadService(stateProvider, pointResolver);
+        // 3. BACnet Mapping + Services
+        var pointResolver = new BacnetPointResolver();
 
-        //
-        // 4. Configuração do device
-        //
-        var config = new BacnetDeviceConfiguration
-        {
-            DeviceInstance = 1001,
-            DeviceName = "SimulatorSA Controller",
-            VendorId = 999
-        };
+        var readService = new BacnetValueReadService(
+            stateProvider,
+            pointResolver);
 
-        //
+        var responseService = new BacnetResponseService();
+
+        // 4. Handlers
+        var whoIsHandler = new WhoIsHandler(configuration);
+
+        var readPropertyHandler = new ReadPropertyHandler(
+            configuration,
+            readService,
+            responseService);
+
         // 5. Servidor BACnet
-        //
-        var server = new BacnetServerService(config, readService);
+        var bacnetServer = new BacnetServerService(
+            configuration,
+            whoIsHandler,
+            readPropertyHandler);
 
-        server.Start();
+        // 6. Runner da simulação
+        var scenarioRunner = new SimulationScenarioRunner(
+            stateStore,
+            snapshotBuffer);
 
-        Console.WriteLine("Press ENTER to stop...");
-        Console.ReadLine();
-
-        server.Stop();
- 
-    }
-    class FakeSimulationStateProvider : ISimulationStateProvider
-    {
-        private readonly SimulationStateDto _state;
-
-        public FakeSimulationStateProvider(SimulationStateDto state)
+        // 🔵 Snapshot inicial (IMPORTANTE!)
+        stateStore.Update(new SimulationSnapshot
         {
-            _state = state;
-        }
+            RoomTemperature = 20,
+            Setpoint = 22,
+            HeatingPowerKW = 0,
+            SequenceNumber = 0,
+            SimulatedMinutes = 0
+        });
 
-        public SimulationStateDto GetCurrentState()
+        // 7. Start BACnet
+        bacnetServer.Start();
+
+        // 8. Rodar simulação live
+        var scenario = new PidScenarioDefinition
         {
-            return _state;
-        }
+            RoomName = "Room 1",
+            InitialTemperature = 18,
+
+            ThermalCapacityKWhPerDegree = 1.5,
+            HeatLossCoefficientKWPerDegree = 0.15,
+
+            TotalSteps = 300,
+            DeltaTimeMinutes = 1.0,
+
+            Setpoint = 22,
+
+            Kp = 25,
+            Ki = 3.0,
+            Kd = 0.0,
+
+            OutdoorTemperature = 15,
+            MaxHeatingPowerKW = 50
+        };
+
+        await scenarioRunner.RunPidScenarioLiveAsync(
+            scenario,
+            delayMilliseconds: 200);
     }
     #region Integration Tests 
     private static void RunBacnetReadDemo()

@@ -16,7 +16,7 @@ public class BaseScenarioDefinition
     public double Setpoint { get; init; } = 22.0;
     public double OutdoorTemperature { get; init; } = 10.0;
     public double DeltaTimeMinutes { get; init; } = 1.0;
-    public int TotalSteps { get; init; } = 90;
+    public int TotalSteps { get; init; } = 120;
 
     public string RoomName { get; init; } = "Room A";
     public double InitialTemperature { get; init; } = 18.0;
