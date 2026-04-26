@@ -48,7 +48,8 @@ public static class BacnetObjectCatalog
                 1,
                 "room.setpoint",
                 "Room Setpoint",
-                "Temperature setpoint used by the controller")
+                "Temperature setpoint used by the controller",
+                isWritable: true)
         };
 
     public static BacnetPointMap? Find(BacnetObjectKind objectType, uint instance)

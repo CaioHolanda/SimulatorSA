@@ -1,30 +1,46 @@
-﻿namespace SimulatorSA.Core.Actuators
+﻿namespace SimulatorSA.Core.Actuators;
+
+public class ThermalActuator
 {
-    public class ThermalActuator
+    private double _currentHeatingPowerKW;
+
+    public string Name { get; }
+    public double OutputPercentage { get; private set; }
+    public double ResponseTimeMinutes { get; set; } = 0;
+    public ThermalActuator(string name)
     {
-        public string Name { get; }
-        public double OutputPercentage { get; private set; }
+        Name = name;
+    }
+    public void SetOutput(double outputPercentage)
+    {
+        OutputPercentage = Math.Clamp(outputPercentage, 0, 100);
+    }
+    public double CalculateHeatingPowerKW(
+        double maxHeatingPowerKW,
+        double deltaTimeMinutes)
+    {
+        double targetHeatingPowerKW =
+            maxHeatingPowerKW * OutputPercentage / 100.0;
 
-        public ThermalActuator(string name)
+        if (ResponseTimeMinutes <= 0)
         {
-            Name = name;
-            OutputPercentage = 0;
+            _currentHeatingPowerKW = targetHeatingPowerKW;
+            return _currentHeatingPowerKW;
         }
+        double responseFactor = Math.Clamp(
+            deltaTimeMinutes / ResponseTimeMinutes,
+            0,
+            1);
 
-        public void SetOutput(double outputPercentage)
-        {
-            if (double.IsNaN(outputPercentage) || double.IsInfinity(outputPercentage))
-                throw new ArgumentOutOfRangeException(nameof(outputPercentage), "Output must be a valid number.");
+        _currentHeatingPowerKW +=
+            (targetHeatingPowerKW - _currentHeatingPowerKW) * responseFactor;
 
-            OutputPercentage = Math.Clamp(outputPercentage, 0.0, 100.0);
-        }
+        return _currentHeatingPowerKW;
+    }
 
-        public double GetThermalPowerKW(double maxThermalPowerKW)
-        {
-            if (maxThermalPowerKW < 0)
-                throw new ArgumentOutOfRangeException(nameof(maxThermalPowerKW), "Maximum thermal power cannot be negative.");
-
-            return (OutputPercentage / 100.0) * maxThermalPowerKW;
-        }
+    public void Reset()
+    {
+        OutputPercentage = 0;
+        _currentHeatingPowerKW = 0;
     }
 }

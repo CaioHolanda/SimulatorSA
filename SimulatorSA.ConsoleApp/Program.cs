@@ -37,7 +37,7 @@ public class Program
             stateStore,
             roomName: "Room 1",
             controllerType: "PID",
-            outdoorTemperatureProvider: () => 10.0
+            outdoorTemperatureProvider: () => 15.0
         );
 
         // 3. BACnet Mapping + Services
@@ -71,7 +71,7 @@ public class Program
         // 🔵 Snapshot inicial (IMPORTANTE!)
         stateStore.Update(new SimulationSnapshot
         {
-            RoomTemperature = 20,
+            RoomTemperature = 18,
             Setpoint = 22,
             HeatingPowerKW = 0,
             SequenceNumber = 0,
@@ -100,7 +100,7 @@ public class Program
             Kd = 0.0,
 
             OutdoorTemperature = 15,
-            MaxHeatingPowerKW = 50
+            MaxHeatingPowerKW = 8
         };
 
         await scenarioRunner.RunPidScenarioLiveAsync(

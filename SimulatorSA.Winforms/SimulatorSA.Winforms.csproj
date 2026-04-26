@@ -1,6 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <ProjectReference Include="..\SimulatorSA.Application\SimulatorSA.Application.csproj" />
+    <ProjectReference Include="..\SimulatorSA.Bacnet\SimulatorSA.Bacnet.csproj" />
     <ProjectReference Include="..\SimulatorSA.Core\SimulatorSA.Core.csproj" />
   </ItemGroup>
 

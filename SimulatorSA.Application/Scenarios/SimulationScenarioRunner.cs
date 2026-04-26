@@ -81,11 +81,16 @@ public class SimulationScenarioRunner
     public async Task<SimulationResult> RunPidScenarioLiveAsync(
         PidScenarioDefinition scenario,
         int delayMilliseconds,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        Func<bool>? isPaused = null)
     {
         EnsureLiveDependencies();
 
-        var room = CreateRoom(scenario);
+        var room = new Room(
+            scenario.RoomName,
+            scenario.InitialTemperature,
+            scenario.HeatLossCoefficientKWPerDegree,
+            scenario.ThermalCapacityKWhPerDegree);
 
         var controller = new PidController(
             scenario.Setpoint,
@@ -93,7 +98,10 @@ public class SimulationScenarioRunner
             scenario.Ki,
             scenario.Kd);
 
-        var actuator = new ThermalActuator(scenario.ActuatorName);
+        var actuator = new ThermalActuator(scenario.ActuatorName)
+        {
+            ResponseTimeMinutes = scenario.ActuatorResponseTimeMinutes
+        };
 
         return await RunLiveAsync(
             room,
@@ -104,13 +112,14 @@ public class SimulationScenarioRunner
             scenario.TotalSteps,
             scenario.DeltaTimeMinutes,
             delayMilliseconds,
-            cancellationToken);
+            cancellationToken,
+            isPaused);
     }
-
     public async Task<SimulationResult> RunOnOffScenarioLiveAsync(
         OnOffScenarioDefinition scenario,
         int delayMilliseconds,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        Func<bool>? isPaused = null)
     {
         EnsureLiveDependencies();
 
@@ -124,8 +133,10 @@ public class SimulationScenarioRunner
             scenario.MinOnTimeMinutes,
             scenario.MinOffTimeMinutes);
 
-        var actuator = new ThermalActuator(scenario.ActuatorName);
-
+        var actuator = new ThermalActuator(scenario.ActuatorName)
+        {
+            ResponseTimeMinutes = scenario.ActuatorResponseTimeMinutes
+        };
         return await RunLiveAsync(
             room,
             controller,
@@ -135,7 +146,8 @@ public class SimulationScenarioRunner
             scenario.TotalSteps,
             scenario.DeltaTimeMinutes,
             delayMilliseconds,
-            cancellationToken);
+            cancellationToken,
+            isPaused);
     }
 
     private async Task<SimulationResult> RunLiveAsync(
@@ -147,25 +159,32 @@ public class SimulationScenarioRunner
         int totalSteps,
         double deltaTimeMinutes,
         int delayMilliseconds,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        Func<bool>? isPaused)
     {
-        var runner = new SimulationRunner();
+        EnsureLiveDependencies();
+        
         var result = new SimulationResult();
+
+        var engine = new SimulationEngine(
+            room: room,
+            controller: controller,
+            actuator: actuator,
+            outdoorTemperature: outdoorTemperature,
+            maxHeatingPowerKW: maxHeatingPowerKW,
+            deltaTimeMinutes: deltaTimeMinutes);
 
         for (int step = 0; step < totalSteps; step++)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var stepResult = runner.Run(
-                room: room,
-                controller: controller,
-                actuator: actuator,
-                outdoorTemperature: outdoorTemperature,
-                maxHeatingPowerKW: maxHeatingPowerKW,
-                totalSteps: 1,
-                deltaTimeMinutes: deltaTimeMinutes);
+            while (isPaused?.Invoke() == true)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                await Task.Delay(100, cancellationToken);
+            }
 
-            var snapshot = stepResult.Snapshots.Last();
+            var snapshot = engine.Step();
 
             result.Snapshots.Add(snapshot);
 
@@ -177,7 +196,6 @@ public class SimulationScenarioRunner
 
         return result;
     }
-
     private static Room CreateRoom(BaseScenarioDefinition scenario)
     {
         return new Room(

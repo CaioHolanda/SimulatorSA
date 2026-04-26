@@ -12,8 +12,8 @@ namespace SimulatorSA.Core.Spaces
             : base(
                   name,
                   initialTemperature,
-                  heatLossCoefficientKWPerDegree: 0.12,
-                  thermalCapacityKWhPerDegree: 0.50)
+                  heatLossCoefficientKWPerDegree: 0.15,
+                  thermalCapacityKWhPerDegree: 1.5)
         {
         }
 

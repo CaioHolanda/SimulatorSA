@@ -30,7 +30,12 @@ partial class MainForm
     {
         splitContainer1 = new SplitContainer();
         grpParameters = new GroupBox();
+        tblMain = new TableLayoutPanel();
         tblParameters = new TableLayoutPanel();
+        txtActuatorResponseTime = new TextBox();
+        txtHeatLossCoefficient = new TextBox();
+        btnReset = new Button();
+        txtThermalCapacity = new TextBox();
         txtMinOffTime = new TextBox();
         txtMinOnTime = new TextBox();
         txtHysteresis = new TextBox();
@@ -65,7 +70,11 @@ partial class MainForm
         lblKd = new Label();
         lblTimeStep = new Label();
         btnRun = new Button();
-        btnReset = new Button();
+        lblThermalCapacity = new Label();
+        lblHeatLossCoefficient = new Label();
+        lblActuatorResponseTime = new Label();
+        btnPlayPause = new Button();
+        txtLog = new TextBox();
         grpResults = new GroupBox();
         tblResults = new TableLayoutPanel();
         OnOffResultGroup = new GroupBox();
@@ -98,6 +107,7 @@ partial class MainForm
         splitContainer1.Panel2.SuspendLayout();
         splitContainer1.SuspendLayout();
         grpParameters.SuspendLayout();
+        tblMain.SuspendLayout();
         tblParameters.SuspendLayout();
         grpResults.SuspendLayout();
         tblResults.SuspendLayout();
@@ -110,58 +120,80 @@ partial class MainForm
         // splitContainer1
         // 
         splitContainer1.Dock = DockStyle.Fill;
+        splitContainer1.FixedPanel = FixedPanel.Panel1;
+        splitContainer1.IsSplitterFixed = true;
         splitContainer1.Location = new Point(0, 0);
         splitContainer1.Name = "splitContainer1";
         // 
         // splitContainer1.Panel1
         // 
         splitContainer1.Panel1.Controls.Add(grpParameters);
+        splitContainer1.Panel1MinSize = 315;
         // 
         // splitContainer1.Panel2
         // 
         splitContainer1.Panel2.Controls.Add(grpResults);
-        splitContainer1.Size = new Size(1311, 832);
+        splitContainer1.Size = new Size(1311, 868);
         splitContainer1.SplitterDistance = 315;
         splitContainer1.TabIndex = 0;
         // 
         // grpParameters
         // 
-        grpParameters.Controls.Add(tblParameters);
+        grpParameters.Controls.Add(tblMain);
         grpParameters.Dock = DockStyle.Fill;
         grpParameters.Font = new Font("Segoe UI", 9F);
         grpParameters.Location = new Point(0, 0);
         grpParameters.Name = "grpParameters";
-        grpParameters.Size = new Size(315, 832);
+        grpParameters.Size = new Size(315, 868);
         grpParameters.TabIndex = 1;
         grpParameters.TabStop = false;
         grpParameters.Text = "Simulation Parameters";
+        // 
+        // tblMain
+        // 
+        tblMain.ColumnCount = 1;
+        tblMain.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+        tblMain.Controls.Add(tblParameters, 0, 0);
+        tblMain.Controls.Add(txtLog, 0, 1);
+        tblMain.Dock = DockStyle.Fill;
+        tblMain.Location = new Point(3, 19);
+        tblMain.Name = "tblMain";
+        tblMain.RowCount = 2;
+        tblMain.RowStyles.Add(new RowStyle());
+        tblMain.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+        tblMain.Size = new Size(309, 846);
+        tblMain.TabIndex = 1;
         // 
         // tblParameters
         // 
         tblParameters.ColumnCount = 2;
         tblParameters.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 56.554306F));
         tblParameters.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 43.445694F));
-        tblParameters.Controls.Add(txtMinOffTime, 1, 17);
-        tblParameters.Controls.Add(txtMinOnTime, 1, 16);
-        tblParameters.Controls.Add(txtHysteresis, 1, 15);
-        tblParameters.Controls.Add(txtPercentageWhenOff, 1, 14);
-        tblParameters.Controls.Add(txtPercentageWhenOn, 1, 13);
-        tblParameters.Controls.Add(lblMinOffTime, 0, 17);
-        tblParameters.Controls.Add(lblMinOnTime, 0, 16);
-        tblParameters.Controls.Add(lblHysteresis, 0, 15);
-        tblParameters.Controls.Add(lblPercentageWhenOff, 0, 14);
-        tblParameters.Controls.Add(lblPercentageWhenOn, 0, 13);
-        tblParameters.Controls.Add(lblOnOffTitle, 0, 12);
-        tblParameters.Controls.Add(lblPIDTitle, 0, 8);
+        tblParameters.Controls.Add(txtActuatorResponseTime, 1, 10);
+        tblParameters.Controls.Add(txtHeatLossCoefficient, 1, 9);
+        tblParameters.Controls.Add(btnReset, 0, 22);
+        tblParameters.Controls.Add(txtThermalCapacity, 1, 8);
+        tblParameters.Controls.Add(txtMinOffTime, 1, 20);
+        tblParameters.Controls.Add(txtMinOnTime, 1, 19);
+        tblParameters.Controls.Add(txtHysteresis, 1, 18);
+        tblParameters.Controls.Add(txtPercentageWhenOff, 1, 17);
+        tblParameters.Controls.Add(txtPercentageWhenOn, 1, 16);
+        tblParameters.Controls.Add(lblMinOffTime, 0, 20);
+        tblParameters.Controls.Add(lblMinOnTime, 0, 19);
+        tblParameters.Controls.Add(lblHysteresis, 0, 18);
+        tblParameters.Controls.Add(lblPercentageWhenOff, 0, 17);
+        tblParameters.Controls.Add(lblPercentageWhenOn, 0, 16);
+        tblParameters.Controls.Add(lblOnOffTitle, 0, 15);
+        tblParameters.Controls.Add(lblPIDTitle, 0, 11);
         tblParameters.Controls.Add(lblHeatingRate, 0, 7);
         tblParameters.Controls.Add(lblCommonTitle, 0, 0);
         tblParameters.Controls.Add(txtSteps, 1, 5);
         tblParameters.Controls.Add(lblTotalSteps, 0, 5);
         tblParameters.Controls.Add(txtMaxHeatingPower, 1, 7);
         tblParameters.Controls.Add(txtTimeStep, 1, 6);
-        tblParameters.Controls.Add(txtKd, 1, 11);
-        tblParameters.Controls.Add(txtKi, 1, 10);
-        tblParameters.Controls.Add(txtKp, 1, 9);
+        tblParameters.Controls.Add(txtKd, 1, 14);
+        tblParameters.Controls.Add(txtKi, 1, 13);
+        tblParameters.Controls.Add(txtKp, 1, 12);
         tblParameters.Controls.Add(txtSetpoint, 1, 4);
         tblParameters.Controls.Add(txtOutdoorTemp, 1, 3);
         tblParameters.Controls.Add(txtInitialTemp, 1, 2);
@@ -170,16 +202,18 @@ partial class MainForm
         tblParameters.Controls.Add(txtRoomName, 1, 1);
         tblParameters.Controls.Add(lblOutdoorTemp, 0, 3);
         tblParameters.Controls.Add(lblSetpoint, 0, 4);
-        tblParameters.Controls.Add(lblKp, 0, 9);
-        tblParameters.Controls.Add(lblKi, 0, 10);
-        tblParameters.Controls.Add(lblKd, 0, 11);
+        tblParameters.Controls.Add(lblKp, 0, 12);
+        tblParameters.Controls.Add(lblKi, 0, 13);
+        tblParameters.Controls.Add(lblKd, 0, 14);
         tblParameters.Controls.Add(lblTimeStep, 0, 6);
-        tblParameters.Controls.Add(btnRun, 0, 18);
-        tblParameters.Controls.Add(btnReset, 1, 18);
-        tblParameters.Dock = DockStyle.Fill;
-        tblParameters.Location = new Point(3, 19);
+        tblParameters.Controls.Add(btnRun, 0, 21);
+        tblParameters.Controls.Add(lblThermalCapacity, 0, 8);
+        tblParameters.Controls.Add(lblHeatLossCoefficient, 0, 9);
+        tblParameters.Controls.Add(lblActuatorResponseTime, 0, 10);
+        tblParameters.Controls.Add(btnPlayPause, 1, 21);
+        tblParameters.Location = new Point(3, 3);
         tblParameters.Name = "tblParameters";
-        tblParameters.RowCount = 19;
+        tblParameters.RowCount = 23;
         tblParameters.RowStyles.Add(new RowStyle());
         tblParameters.RowStyles.Add(new RowStyle());
         tblParameters.RowStyles.Add(new RowStyle());
@@ -199,57 +233,97 @@ partial class MainForm
         tblParameters.RowStyles.Add(new RowStyle());
         tblParameters.RowStyles.Add(new RowStyle());
         tblParameters.RowStyles.Add(new RowStyle());
-        tblParameters.Size = new Size(309, 810);
+        tblParameters.RowStyles.Add(new RowStyle());
+        tblParameters.RowStyles.Add(new RowStyle());
+        tblParameters.RowStyles.Add(new RowStyle(SizeType.Absolute, 41F));
+        tblParameters.RowStyles.Add(new RowStyle(SizeType.Absolute, 9F));
+        tblParameters.Size = new Size(303, 670);
         tblParameters.TabIndex = 0;
         tblParameters.Paint += tblParameters_Paint;
+        // 
+        // txtActuatorResponseTime
+        // 
+        txtActuatorResponseTime.Dock = DockStyle.Fill;
+        txtActuatorResponseTime.Location = new Point(174, 290);
+        txtActuatorResponseTime.Name = "txtActuatorResponseTime";
+        txtActuatorResponseTime.Size = new Size(126, 23);
+        txtActuatorResponseTime.TabIndex = 46;
+        // 
+        // txtHeatLossCoefficient
+        // 
+        txtHeatLossCoefficient.Dock = DockStyle.Fill;
+        txtHeatLossCoefficient.Location = new Point(174, 261);
+        txtHeatLossCoefficient.Name = "txtHeatLossCoefficient";
+        txtHeatLossCoefficient.Size = new Size(126, 23);
+        txtHeatLossCoefficient.TabIndex = 44;
+        // 
+        // btnReset
+        // 
+        btnReset.Location = new Point(3, 635);
+        btnReset.Margin = new Padding(3, 5, 3, 3);
+        btnReset.Name = "btnReset";
+        btnReset.Size = new Size(165, 32);
+        btnReset.TabIndex = 21;
+        btnReset.Text = "Reset";
+        btnReset.UseVisualStyleBackColor = true;
+        btnReset.Click += btnReset_Click;
+        // 
+        // txtThermalCapacity
+        // 
+        txtThermalCapacity.Dock = DockStyle.Fill;
+        txtThermalCapacity.Location = new Point(174, 232);
+        txtThermalCapacity.Name = "txtThermalCapacity";
+        txtThermalCapacity.Size = new Size(126, 23);
+        txtThermalCapacity.TabIndex = 43;
+        txtThermalCapacity.TextChanged += txtThermalCapacity_TextChanged;
         // 
         // txtMinOffTime
         // 
         txtMinOffTime.Dock = DockStyle.Fill;
-        txtMinOffTime.Location = new Point(177, 516);
+        txtMinOffTime.Location = new Point(174, 563);
         txtMinOffTime.Name = "txtMinOffTime";
-        txtMinOffTime.Size = new Size(129, 23);
+        txtMinOffTime.Size = new Size(126, 23);
         txtMinOffTime.TabIndex = 40;
         // 
         // txtMinOnTime
         // 
         txtMinOnTime.Dock = DockStyle.Fill;
-        txtMinOnTime.Location = new Point(177, 487);
+        txtMinOnTime.Location = new Point(174, 534);
         txtMinOnTime.Name = "txtMinOnTime";
-        txtMinOnTime.Size = new Size(129, 23);
+        txtMinOnTime.Size = new Size(126, 23);
         txtMinOnTime.TabIndex = 39;
         // 
         // txtHysteresis
         // 
         txtHysteresis.Dock = DockStyle.Fill;
-        txtHysteresis.Location = new Point(177, 458);
+        txtHysteresis.Location = new Point(174, 505);
         txtHysteresis.Name = "txtHysteresis";
-        txtHysteresis.Size = new Size(129, 23);
+        txtHysteresis.Size = new Size(126, 23);
         txtHysteresis.TabIndex = 38;
         // 
         // txtPercentageWhenOff
         // 
         txtPercentageWhenOff.Dock = DockStyle.Fill;
-        txtPercentageWhenOff.Location = new Point(177, 429);
+        txtPercentageWhenOff.Location = new Point(174, 476);
         txtPercentageWhenOff.Name = "txtPercentageWhenOff";
-        txtPercentageWhenOff.Size = new Size(129, 23);
+        txtPercentageWhenOff.Size = new Size(126, 23);
         txtPercentageWhenOff.TabIndex = 37;
         // 
         // txtPercentageWhenOn
         // 
         txtPercentageWhenOn.Dock = DockStyle.Fill;
-        txtPercentageWhenOn.Location = new Point(177, 400);
+        txtPercentageWhenOn.Location = new Point(174, 447);
         txtPercentageWhenOn.Name = "txtPercentageWhenOn";
-        txtPercentageWhenOn.Size = new Size(129, 23);
+        txtPercentageWhenOn.Size = new Size(126, 23);
         txtPercentageWhenOn.TabIndex = 36;
         // 
         // lblMinOffTime
         // 
         lblMinOffTime.AutoSize = true;
         lblMinOffTime.Dock = DockStyle.Fill;
-        lblMinOffTime.Location = new Point(3, 513);
+        lblMinOffTime.Location = new Point(3, 560);
         lblMinOffTime.Name = "lblMinOffTime";
-        lblMinOffTime.Size = new Size(168, 29);
+        lblMinOffTime.Size = new Size(165, 29);
         lblMinOffTime.TabIndex = 35;
         lblMinOffTime.Text = "Min. Off Time";
         lblMinOffTime.TextAlign = ContentAlignment.MiddleLeft;
@@ -258,9 +332,9 @@ partial class MainForm
         // 
         lblMinOnTime.AutoSize = true;
         lblMinOnTime.Dock = DockStyle.Fill;
-        lblMinOnTime.Location = new Point(3, 484);
+        lblMinOnTime.Location = new Point(3, 531);
         lblMinOnTime.Name = "lblMinOnTime";
-        lblMinOnTime.Size = new Size(168, 29);
+        lblMinOnTime.Size = new Size(165, 29);
         lblMinOnTime.TabIndex = 34;
         lblMinOnTime.Text = "Min. On Time";
         lblMinOnTime.TextAlign = ContentAlignment.MiddleLeft;
@@ -269,9 +343,9 @@ partial class MainForm
         // 
         lblHysteresis.AutoSize = true;
         lblHysteresis.Dock = DockStyle.Fill;
-        lblHysteresis.Location = new Point(3, 455);
+        lblHysteresis.Location = new Point(3, 502);
         lblHysteresis.Name = "lblHysteresis";
-        lblHysteresis.Size = new Size(168, 29);
+        lblHysteresis.Size = new Size(165, 29);
         lblHysteresis.TabIndex = 33;
         lblHysteresis.Text = "Hysteresis";
         lblHysteresis.TextAlign = ContentAlignment.MiddleLeft;
@@ -280,9 +354,9 @@ partial class MainForm
         // 
         lblPercentageWhenOff.AutoSize = true;
         lblPercentageWhenOff.Dock = DockStyle.Fill;
-        lblPercentageWhenOff.Location = new Point(3, 426);
+        lblPercentageWhenOff.Location = new Point(3, 473);
         lblPercentageWhenOff.Name = "lblPercentageWhenOff";
-        lblPercentageWhenOff.Size = new Size(168, 29);
+        lblPercentageWhenOff.Size = new Size(165, 29);
         lblPercentageWhenOff.TabIndex = 32;
         lblPercentageWhenOff.Text = "Percentage When Off";
         lblPercentageWhenOff.TextAlign = ContentAlignment.MiddleLeft;
@@ -291,9 +365,9 @@ partial class MainForm
         // 
         lblPercentageWhenOn.AutoSize = true;
         lblPercentageWhenOn.Dock = DockStyle.Fill;
-        lblPercentageWhenOn.Location = new Point(3, 397);
+        lblPercentageWhenOn.Location = new Point(3, 444);
         lblPercentageWhenOn.Name = "lblPercentageWhenOn";
-        lblPercentageWhenOn.Size = new Size(168, 29);
+        lblPercentageWhenOn.Size = new Size(165, 29);
         lblPercentageWhenOn.TabIndex = 31;
         lblPercentageWhenOn.Text = "Percentage When On";
         lblPercentageWhenOn.TextAlign = ContentAlignment.MiddleLeft;
@@ -304,10 +378,9 @@ partial class MainForm
         lblOnOffTitle.Cursor = Cursors.No;
         lblOnOffTitle.Dock = DockStyle.Fill;
         lblOnOffTitle.Font = new Font("Segoe UI", 11F, FontStyle.Bold);
-        lblOnOffTitle.Location = new Point(3, 357);
+        lblOnOffTitle.Location = new Point(3, 424);
         lblOnOffTitle.Name = "lblOnOffTitle";
-        lblOnOffTitle.Padding = new Padding(0, 20, 0, 0);
-        lblOnOffTitle.Size = new Size(168, 40);
+        lblOnOffTitle.Size = new Size(165, 20);
         lblOnOffTitle.TabIndex = 30;
         lblOnOffTitle.Text = "On/Off Control";
         lblOnOffTitle.TextAlign = ContentAlignment.MiddleLeft;
@@ -319,10 +392,9 @@ partial class MainForm
         lblPIDTitle.Cursor = Cursors.No;
         lblPIDTitle.Dock = DockStyle.Fill;
         lblPIDTitle.Font = new Font("Segoe UI", 12F, FontStyle.Bold);
-        lblPIDTitle.Location = new Point(3, 229);
+        lblPIDTitle.Location = new Point(3, 316);
         lblPIDTitle.Name = "lblPIDTitle";
-        lblPIDTitle.Padding = new Padding(0, 20, 0, 0);
-        lblPIDTitle.Size = new Size(168, 41);
+        lblPIDTitle.Size = new Size(165, 21);
         lblPIDTitle.TabIndex = 29;
         lblPIDTitle.Text = "PID Control";
         lblPIDTitle.TextAlign = ContentAlignment.MiddleLeft;
@@ -333,7 +405,7 @@ partial class MainForm
         lblHeatingRate.Location = new Point(1, 200);
         lblHeatingRate.Margin = new Padding(1, 0, 1, 0);
         lblHeatingRate.Name = "lblHeatingRate";
-        lblHeatingRate.Size = new Size(172, 29);
+        lblHeatingRate.Size = new Size(169, 29);
         lblHeatingRate.TabIndex = 28;
         lblHeatingRate.Text = "Heat Thermal Power (kW)";
         lblHeatingRate.TextAlign = ContentAlignment.MiddleLeft;
@@ -346,18 +418,18 @@ partial class MainForm
         lblCommonTitle.Location = new Point(3, 0);
         lblCommonTitle.Name = "lblCommonTitle";
         lblCommonTitle.Padding = new Padding(0, 5, 0, 0);
-        lblCommonTitle.Size = new Size(168, 26);
+        lblCommonTitle.Size = new Size(165, 26);
         lblCommonTitle.TabIndex = 27;
-        lblCommonTitle.Text = "Common";
+        lblCommonTitle.Text = "Room Parameters";
         lblCommonTitle.TextAlign = ContentAlignment.MiddleLeft;
         lblCommonTitle.Click += label2_Click_1;
         // 
         // txtSteps
         // 
         txtSteps.Dock = DockStyle.Fill;
-        txtSteps.Location = new Point(177, 145);
+        txtSteps.Location = new Point(174, 145);
         txtSteps.Name = "txtSteps";
-        txtSteps.Size = new Size(129, 23);
+        txtSteps.Size = new Size(126, 23);
         txtSteps.TabIndex = 23;
         // 
         // lblTotalSteps
@@ -366,7 +438,7 @@ partial class MainForm
         lblTotalSteps.Dock = DockStyle.Fill;
         lblTotalSteps.Location = new Point(3, 142);
         lblTotalSteps.Name = "lblTotalSteps";
-        lblTotalSteps.Size = new Size(168, 29);
+        lblTotalSteps.Size = new Size(165, 29);
         lblTotalSteps.TabIndex = 22;
         lblTotalSteps.Text = "Total Steps";
         lblTotalSteps.TextAlign = ContentAlignment.MiddleLeft;
@@ -374,65 +446,65 @@ partial class MainForm
         // txtMaxHeatingPower
         // 
         txtMaxHeatingPower.Dock = DockStyle.Fill;
-        txtMaxHeatingPower.Location = new Point(177, 203);
+        txtMaxHeatingPower.Location = new Point(174, 203);
         txtMaxHeatingPower.Name = "txtMaxHeatingPower";
-        txtMaxHeatingPower.Size = new Size(129, 23);
+        txtMaxHeatingPower.Size = new Size(126, 23);
         txtMaxHeatingPower.TabIndex = 19;
         // 
         // txtTimeStep
         // 
         txtTimeStep.Dock = DockStyle.Fill;
-        txtTimeStep.Location = new Point(177, 174);
+        txtTimeStep.Location = new Point(174, 174);
         txtTimeStep.Name = "txtTimeStep";
-        txtTimeStep.Size = new Size(129, 23);
+        txtTimeStep.Size = new Size(126, 23);
         txtTimeStep.TabIndex = 17;
         // 
         // txtKd
         // 
         txtKd.Dock = DockStyle.Fill;
-        txtKd.Location = new Point(177, 331);
+        txtKd.Location = new Point(174, 398);
         txtKd.Name = "txtKd";
-        txtKd.Size = new Size(129, 23);
+        txtKd.Size = new Size(126, 23);
         txtKd.TabIndex = 16;
         // 
         // txtKi
         // 
         txtKi.Dock = DockStyle.Fill;
-        txtKi.Location = new Point(177, 302);
+        txtKi.Location = new Point(174, 369);
         txtKi.Name = "txtKi";
-        txtKi.Size = new Size(129, 23);
+        txtKi.Size = new Size(126, 23);
         txtKi.TabIndex = 15;
         // 
         // txtKp
         // 
         txtKp.Dock = DockStyle.Fill;
-        txtKp.Location = new Point(177, 273);
+        txtKp.Location = new Point(174, 340);
         txtKp.Name = "txtKp";
-        txtKp.Size = new Size(129, 23);
+        txtKp.Size = new Size(126, 23);
         txtKp.TabIndex = 14;
         // 
         // txtSetpoint
         // 
         txtSetpoint.Dock = DockStyle.Fill;
-        txtSetpoint.Location = new Point(177, 116);
+        txtSetpoint.Location = new Point(174, 116);
         txtSetpoint.Name = "txtSetpoint";
-        txtSetpoint.Size = new Size(129, 23);
+        txtSetpoint.Size = new Size(126, 23);
         txtSetpoint.TabIndex = 13;
         // 
         // txtOutdoorTemp
         // 
         txtOutdoorTemp.Dock = DockStyle.Fill;
-        txtOutdoorTemp.Location = new Point(177, 87);
+        txtOutdoorTemp.Location = new Point(174, 87);
         txtOutdoorTemp.Name = "txtOutdoorTemp";
-        txtOutdoorTemp.Size = new Size(129, 23);
+        txtOutdoorTemp.Size = new Size(126, 23);
         txtOutdoorTemp.TabIndex = 12;
         // 
         // txtInitialTemp
         // 
         txtInitialTemp.Dock = DockStyle.Fill;
-        txtInitialTemp.Location = new Point(177, 58);
+        txtInitialTemp.Location = new Point(174, 58);
         txtInitialTemp.Name = "txtInitialTemp";
-        txtInitialTemp.Size = new Size(129, 23);
+        txtInitialTemp.Size = new Size(126, 23);
         txtInitialTemp.TabIndex = 11;
         // 
         // lblInitialTemp
@@ -441,7 +513,7 @@ partial class MainForm
         lblInitialTemp.Dock = DockStyle.Fill;
         lblInitialTemp.Location = new Point(3, 55);
         lblInitialTemp.Name = "lblInitialTemp";
-        lblInitialTemp.Size = new Size(168, 29);
+        lblInitialTemp.Size = new Size(165, 29);
         lblInitialTemp.TabIndex = 2;
         lblInitialTemp.Text = "Initial Temp (ºC)";
         lblInitialTemp.TextAlign = ContentAlignment.MiddleLeft;
@@ -452,7 +524,7 @@ partial class MainForm
         lblRoomName.Dock = DockStyle.Fill;
         lblRoomName.Location = new Point(3, 26);
         lblRoomName.Name = "lblRoomName";
-        lblRoomName.Size = new Size(168, 29);
+        lblRoomName.Size = new Size(165, 29);
         lblRoomName.TabIndex = 0;
         lblRoomName.Text = "Room Name";
         lblRoomName.TextAlign = ContentAlignment.MiddleLeft;
@@ -460,9 +532,9 @@ partial class MainForm
         // txtRoomName
         // 
         txtRoomName.Dock = DockStyle.Fill;
-        txtRoomName.Location = new Point(177, 29);
+        txtRoomName.Location = new Point(174, 29);
         txtRoomName.Name = "txtRoomName";
-        txtRoomName.Size = new Size(129, 23);
+        txtRoomName.Size = new Size(126, 23);
         txtRoomName.TabIndex = 1;
         // 
         // lblOutdoorTemp
@@ -471,7 +543,7 @@ partial class MainForm
         lblOutdoorTemp.Dock = DockStyle.Fill;
         lblOutdoorTemp.Location = new Point(3, 84);
         lblOutdoorTemp.Name = "lblOutdoorTemp";
-        lblOutdoorTemp.Size = new Size(168, 29);
+        lblOutdoorTemp.Size = new Size(165, 29);
         lblOutdoorTemp.TabIndex = 3;
         lblOutdoorTemp.Text = "Outdoor Temp (ºC)";
         lblOutdoorTemp.TextAlign = ContentAlignment.MiddleLeft;
@@ -482,7 +554,7 @@ partial class MainForm
         lblSetpoint.Dock = DockStyle.Fill;
         lblSetpoint.Location = new Point(3, 113);
         lblSetpoint.Name = "lblSetpoint";
-        lblSetpoint.Size = new Size(168, 29);
+        lblSetpoint.Size = new Size(165, 29);
         lblSetpoint.TabIndex = 4;
         lblSetpoint.Text = "Setpoint (ºC)";
         lblSetpoint.TextAlign = ContentAlignment.MiddleLeft;
@@ -491,9 +563,9 @@ partial class MainForm
         // 
         lblKp.AutoSize = true;
         lblKp.Dock = DockStyle.Fill;
-        lblKp.Location = new Point(3, 270);
+        lblKp.Location = new Point(3, 337);
         lblKp.Name = "lblKp";
-        lblKp.Size = new Size(168, 29);
+        lblKp.Size = new Size(165, 29);
         lblKp.TabIndex = 5;
         lblKp.Text = "Kp";
         lblKp.TextAlign = ContentAlignment.MiddleLeft;
@@ -502,9 +574,9 @@ partial class MainForm
         // 
         lblKi.AutoSize = true;
         lblKi.Dock = DockStyle.Fill;
-        lblKi.Location = new Point(3, 299);
+        lblKi.Location = new Point(3, 366);
         lblKi.Name = "lblKi";
-        lblKi.Size = new Size(168, 29);
+        lblKi.Size = new Size(165, 29);
         lblKi.TabIndex = 6;
         lblKi.Text = "Ki";
         lblKi.TextAlign = ContentAlignment.MiddleLeft;
@@ -513,9 +585,9 @@ partial class MainForm
         // 
         lblKd.AutoSize = true;
         lblKd.Dock = DockStyle.Fill;
-        lblKd.Location = new Point(3, 328);
+        lblKd.Location = new Point(3, 395);
         lblKd.Name = "lblKd";
-        lblKd.Size = new Size(168, 29);
+        lblKd.Size = new Size(165, 29);
         lblKd.TabIndex = 7;
         lblKd.Text = "Kd";
         lblKd.TextAlign = ContentAlignment.MiddleLeft;
@@ -526,31 +598,80 @@ partial class MainForm
         lblTimeStep.Location = new Point(1, 171);
         lblTimeStep.Margin = new Padding(1, 0, 1, 0);
         lblTimeStep.Name = "lblTimeStep";
-        lblTimeStep.Size = new Size(172, 29);
+        lblTimeStep.Size = new Size(169, 29);
         lblTimeStep.TabIndex = 8;
         lblTimeStep.Text = "Time Step (min)";
         lblTimeStep.TextAlign = ContentAlignment.MiddleLeft;
         // 
         // btnRun
         // 
-        btnRun.Location = new Point(3, 562);
-        btnRun.Margin = new Padding(3, 20, 3, 3);
+        btnRun.Dock = DockStyle.Fill;
+        btnRun.Location = new Point(3, 594);
+        btnRun.Margin = new Padding(3, 5, 3, 3);
         btnRun.Name = "btnRun";
-        btnRun.Size = new Size(131, 23);
+        btnRun.Size = new Size(165, 33);
         btnRun.TabIndex = 20;
         btnRun.Text = "Run Simulation";
         btnRun.UseVisualStyleBackColor = true;
         btnRun.Click += btnRun_Click;
         // 
-        // btnReset
+        // lblThermalCapacity
         // 
-        btnReset.Location = new Point(177, 562);
-        btnReset.Margin = new Padding(3, 20, 3, 3);
-        btnReset.Name = "btnReset";
-        btnReset.Size = new Size(110, 23);
-        btnReset.TabIndex = 21;
-        btnReset.Text = "Reset";
-        btnReset.UseVisualStyleBackColor = true;
+        lblThermalCapacity.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+        lblThermalCapacity.Location = new Point(1, 229);
+        lblThermalCapacity.Margin = new Padding(1, 0, 1, 0);
+        lblThermalCapacity.Name = "lblThermalCapacity";
+        lblThermalCapacity.Size = new Size(169, 29);
+        lblThermalCapacity.TabIndex = 41;
+        lblThermalCapacity.Text = "Thermal Capacity (kWh/ºC)";
+        lblThermalCapacity.TextAlign = ContentAlignment.MiddleLeft;
+        // 
+        // lblHeatLossCoefficient
+        // 
+        lblHeatLossCoefficient.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+        lblHeatLossCoefficient.Location = new Point(1, 258);
+        lblHeatLossCoefficient.Margin = new Padding(1, 0, 1, 0);
+        lblHeatLossCoefficient.Name = "lblHeatLossCoefficient";
+        lblHeatLossCoefficient.Size = new Size(169, 29);
+        lblHeatLossCoefficient.TabIndex = 42;
+        lblHeatLossCoefficient.Text = "Heat Loss Coefficient (kW/ºC)";
+        lblHeatLossCoefficient.TextAlign = ContentAlignment.MiddleLeft;
+        // 
+        // lblActuatorResponseTime
+        // 
+        lblActuatorResponseTime.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+        lblActuatorResponseTime.Location = new Point(1, 287);
+        lblActuatorResponseTime.Margin = new Padding(1, 0, 1, 0);
+        lblActuatorResponseTime.Name = "lblActuatorResponseTime";
+        lblActuatorResponseTime.Size = new Size(169, 29);
+        lblActuatorResponseTime.TabIndex = 45;
+        lblActuatorResponseTime.Text = "Actuator Response Time (min)";
+        lblActuatorResponseTime.TextAlign = ContentAlignment.MiddleLeft;
+        // 
+        // btnPlayPause
+        // 
+        btnPlayPause.Dock = DockStyle.Fill;
+        btnPlayPause.Location = new Point(174, 592);
+        btnPlayPause.Name = "btnPlayPause";
+        btnPlayPause.Size = new Size(126, 35);
+        btnPlayPause.TabIndex = 47;
+        btnPlayPause.Text = "Play/Pause";
+        btnPlayPause.UseVisualStyleBackColor = true;
+        btnPlayPause.Click += btnPlayPause_Click;
+        // 
+        // txtLog
+        // 
+        txtLog.BackColor = SystemColors.WindowText;
+        txtLog.Dock = DockStyle.Fill;
+        txtLog.Font = new Font("Consolas", 9F, FontStyle.Regular, GraphicsUnit.Point, 0);
+        txtLog.ForeColor = Color.LightGreen;
+        txtLog.Location = new Point(3, 679);
+        txtLog.Multiline = true;
+        txtLog.Name = "txtLog";
+        txtLog.ReadOnly = true;
+        txtLog.ScrollBars = ScrollBars.Vertical;
+        txtLog.Size = new Size(303, 164);
+        txtLog.TabIndex = 1;
         // 
         // grpResults
         // 
@@ -558,7 +679,7 @@ partial class MainForm
         grpResults.Dock = DockStyle.Fill;
         grpResults.Location = new Point(0, 0);
         grpResults.Name = "grpResults";
-        grpResults.Size = new Size(992, 832);
+        grpResults.Size = new Size(992, 868);
         grpResults.TabIndex = 0;
         grpResults.TabStop = false;
         grpResults.Text = "Results";
@@ -579,7 +700,7 @@ partial class MainForm
         tblResults.RowStyles.Add(new RowStyle(SizeType.Percent, 50F));
         tblResults.RowStyles.Add(new RowStyle());
         tblResults.RowStyles.Add(new RowStyle(SizeType.Percent, 50F));
-        tblResults.Size = new Size(986, 810);
+        tblResults.Size = new Size(986, 846);
         tblResults.TabIndex = 0;
         // 
         // OnOffResultGroup
@@ -593,7 +714,7 @@ partial class MainForm
         OnOffResultGroup.Controls.Add(lblOnOffSteps);
         OnOffResultGroup.Controls.Add(lblOnOffFinalTemperature);
         OnOffResultGroup.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
-        OnOffResultGroup.Location = new Point(3, 408);
+        OnOffResultGroup.Location = new Point(3, 426);
         OnOffResultGroup.Name = "OnOffResultGroup";
         OnOffResultGroup.Size = new Size(846, 66);
         OnOffResultGroup.TabIndex = 6;
@@ -774,11 +895,11 @@ partial class MainForm
         OnOffGraphsGroup.Controls.Add(graphOnOffActuator, 1, 0);
         OnOffGraphsGroup.Controls.Add(graphOnOffTemperature, 0, 0);
         OnOffGraphsGroup.Dock = DockStyle.Fill;
-        OnOffGraphsGroup.Location = new Point(3, 480);
+        OnOffGraphsGroup.Location = new Point(3, 498);
         OnOffGraphsGroup.Name = "OnOffGraphsGroup";
         OnOffGraphsGroup.RowCount = 1;
         OnOffGraphsGroup.RowStyles.Add(new RowStyle());
-        OnOffGraphsGroup.Size = new Size(980, 327);
+        OnOffGraphsGroup.Size = new Size(980, 345);
         OnOffGraphsGroup.TabIndex = 3;
         // 
         // graphOnOffActuator
@@ -786,7 +907,7 @@ partial class MainForm
         graphOnOffActuator.Dock = DockStyle.Fill;
         graphOnOffActuator.Location = new Point(493, 3);
         graphOnOffActuator.Name = "graphOnOffActuator";
-        graphOnOffActuator.Size = new Size(484, 321);
+        graphOnOffActuator.Size = new Size(484, 339);
         graphOnOffActuator.TabIndex = 3;
         // 
         // graphOnOffTemperature
@@ -794,7 +915,7 @@ partial class MainForm
         graphOnOffTemperature.Dock = DockStyle.Fill;
         graphOnOffTemperature.Location = new Point(3, 3);
         graphOnOffTemperature.Name = "graphOnOffTemperature";
-        graphOnOffTemperature.Size = new Size(484, 321);
+        graphOnOffTemperature.Size = new Size(484, 339);
         graphOnOffTemperature.TabIndex = 0;
         // 
         // PIDGraphsGroup
@@ -809,7 +930,7 @@ partial class MainForm
         PIDGraphsGroup.Name = "PIDGraphsGroup";
         PIDGraphsGroup.RowCount = 1;
         PIDGraphsGroup.RowStyles.Add(new RowStyle());
-        PIDGraphsGroup.Size = new Size(980, 327);
+        PIDGraphsGroup.Size = new Size(980, 345);
         PIDGraphsGroup.TabIndex = 1;
         // 
         // graphPIDActuator
@@ -817,7 +938,7 @@ partial class MainForm
         graphPIDActuator.Dock = DockStyle.Fill;
         graphPIDActuator.Location = new Point(493, 3);
         graphPIDActuator.Name = "graphPIDActuator";
-        graphPIDActuator.Size = new Size(484, 321);
+        graphPIDActuator.Size = new Size(484, 339);
         graphPIDActuator.TabIndex = 3;
         // 
         // graphPIDTemperature
@@ -825,14 +946,14 @@ partial class MainForm
         graphPIDTemperature.Dock = DockStyle.Fill;
         graphPIDTemperature.Location = new Point(3, 3);
         graphPIDTemperature.Name = "graphPIDTemperature";
-        graphPIDTemperature.Size = new Size(484, 321);
+        graphPIDTemperature.Size = new Size(484, 339);
         graphPIDTemperature.TabIndex = 0;
         // 
         // MainForm
         // 
         AutoScaleDimensions = new SizeF(7F, 15F);
         AutoScaleMode = AutoScaleMode.Font;
-        ClientSize = new Size(1311, 832);
+        ClientSize = new Size(1311, 868);
         Controls.Add(splitContainer1);
         Name = "MainForm";
         Text = "Simulator";
@@ -842,6 +963,8 @@ partial class MainForm
         ((System.ComponentModel.ISupportInitialize)splitContainer1).EndInit();
         splitContainer1.ResumeLayout(false);
         grpParameters.ResumeLayout(false);
+        tblMain.ResumeLayout(false);
+        tblMain.PerformLayout();
         tblParameters.ResumeLayout(false);
         tblParameters.PerformLayout();
         grpResults.ResumeLayout(false);
@@ -922,4 +1045,13 @@ partial class MainForm
     private Label lblOnOffAbsErrorAverage;
     private Label lblOnOffSteps;
     private Label lblOnOffFinalTemperature;
+    private Label lblActuatorResponseTime;
+    private Label lblHeatLossCoefficient;
+    private Label lblThermalCapacity;
+    private TextBox txtHeatLossCoefficient;
+    private TextBox txtThermalCapacity;
+    private TextBox txtActuatorResponseTime;
+    private TableLayoutPanel tblMain;
+    private TextBox txtLog;
+    private Button btnPlayPause;
 }

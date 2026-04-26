@@ -56,11 +56,15 @@ public class SimulationEngine : ISimulationEngine
 
         _stepAction?.Invoke(_room, CurrentStep, simulatedMinutes);
 
-        double controllerOutput = _controller.CalculateOutput(_room.ActualTemperature, _deltaTimeMinutes);
+        double controllerOutput = _controller.CalculateOutput(
+            _room.ActualTemperature,
+            _deltaTimeMinutes);
 
         _actuator.SetOutput(controllerOutput);
 
-        double heatingPowerKW = _actuator.GetThermalPowerKW(_maxHeatingPowerKW);
+        double heatingPowerKW = _actuator.CalculateHeatingPowerKW(
+            _maxHeatingPowerKW,
+            _deltaTimeMinutes);
 
         _room.ApplyThermalPower(heatingPowerKW, _deltaTimeMinutes);
 
@@ -99,6 +103,7 @@ public class SimulationEngine : ISimulationEngine
     public void Reset()
     {
         _controller.Reset();
+        _actuator.Reset();
         CurrentStep = 0;
     }
 }

@@ -26,4 +26,6 @@ public class BaseScenarioDefinition
 
     public double MaxHeatingPowerKW { get; init; } = 5.0;
     public string ActuatorName { get; init; } = "Heating Coil";
+    public double ActuatorResponseFactor { get; set; } = 1.0;
+    public double ActuatorResponseTimeMinutes { get; set; } = 10.0;
 }

@@ -270,14 +270,13 @@ public class BacnetValueReadServiceTests
             {
                 _output.WriteLine($"[Resolve] Type={objectType}, Instance={instance} -> room.unmapped");
 
-                return new BacnetPointMap
-                {
-                    PointKey = "room.unmapped",
-                    ObjectType = BacnetObjectKind.AnalogInput,
-                    Instance = 999,
-                    ObjectName = "Unmapped Point",
-                    IsWritable = false
-                };
+                return new BacnetPointMap(
+                    BacnetObjectKind.AnalogInput,
+                    999,
+                    "room.unmapped",
+                    "Unmapped Point",
+                    "Unmapped BACnet test point",
+                    isWritable: false);
             }
 
             _output.WriteLine($"[Resolve] Type={objectType}, Instance={instance} -> null");
@@ -290,14 +289,13 @@ public class BacnetValueReadServiceTests
             {
                 _output.WriteLine($"[ResolveByKey] Key={pointKey} -> Unmapped Point");
 
-                return new BacnetPointMap
-                {
-                    PointKey = "room.unmapped",
-                    ObjectType = BacnetObjectKind.AnalogInput,
-                    Instance = 999,
-                    ObjectName = "Unmapped Point",
-                    IsWritable = false
-                };
+                return new BacnetPointMap(
+                    BacnetObjectKind.AnalogInput,
+                    999,
+                    "room.unmapped",
+                    "Unmapped Point",
+                    "Unmapped BACnet test point",
+                    isWritable: false);
             }
 
             _output.WriteLine($"[ResolveByKey] Key={pointKey} -> null");

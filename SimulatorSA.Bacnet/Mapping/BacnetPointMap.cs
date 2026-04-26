@@ -7,18 +7,20 @@ public class BacnetPointMap
     public string PointKey { get; }
     public string ObjectName { get; }
     public string Description { get; }
-
+    public bool IsWritable { get; }
     public BacnetPointMap(
         BacnetObjectKind objectType,
         uint instance,
         string pointKey,
         string objectName,
-        string description)
+        string description,
+        bool isWritable = false)
     {
         ObjectType = objectType;
         Instance = instance;
         PointKey = pointKey;
         ObjectName = objectName;
         Description = description;
+        IsWritable = isWritable;
     }
 }
